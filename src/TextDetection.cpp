@@ -596,7 +596,10 @@ Mat swtFilterEdges(const Mat& input) {
 	for (int i = 0; i < count_char_regions; ++i) {
 		string name = char_filename+to_string(i)+".png";
 		cout << name << endl;
-		charRegionArray[i].plot_char_region( name );
+		if(charRegionArray[i].is_measurable()) {
+			charRegionArray[i].plot_char_region( name );
+			charRegionArray[i].ransac_find_lines();
+		}
 	}
 
 	//// free pres_mat

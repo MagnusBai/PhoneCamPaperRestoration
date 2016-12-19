@@ -1,6 +1,10 @@
 CXX=g++ -std=c++11
+
 CFLAGS=-I./include
-LDFLAGS=-lopencv_core -lopencv_highgui -lopencv_imgproc
+OPENCV_INCL=
+OPENCV_LIBS=-lopencv_core -lopencv_highgui -lopencv_imgproc
+MRPT_INCL=-I/usr/include/eigen3 -I/usr/include/mrpt/mrpt-config -I/usr/include/suitesparse -I/usr/include/mrpt/bayes/include -I/usr/include/mrpt/graphs/include -I/usr/include/mrpt/vision/include -I/usr/include/mrpt/tfest/include -I/usr/include/mrpt/maps/include -I/usr/include/mrpt/obs/include -I/usr/include/mrpt/opengl/include -I/usr/include/mrpt/base/include -I/usr/include/mrpt/slam/include -I/usr/include/mrpt/gui/include -I/usr/include/mrpt/topography/include
+MRPT_LIBS=-lmrpt-obs -lmrpt-slam -lmrpt-opengl -lmrpt-base -lmrpt-gui
 
 SRC=./src
 INCLUDE=./include
@@ -17,16 +21,16 @@ build_folder:
 	$(MKDIR_P) $(BIN_DIR)
 
 $(BUILD_DIR)/RegionGrowth.o: $(SRC)/RegionGrowth.cpp
-	$(CXX) $^ $(CFLAGS) -c -o $@
+	$(CXX) $^ $(CFLAGS) $(OPENCV_INCL) -c -o $@
 
 $(BUILD_DIR)/TextDetection.o: $(SRC)/TextDetection.cpp
-	$(CXX) $^ $(CFLAGS) -c -o $@
+	$(CXX) $^ $(CFLAGS) $(OPENCV_INCL) -c -o $@
 
 $(BUILD_DIR)/CharRegion.o: $(SRC)/CharRegion.cpp
-	$(CXX) $^ $(CFLAGS) -c -o $@
+	$(CXX) $^ $(CFLAGS) $(OPENCV_INCL) $(MRPT_INCL) -c -o $@
 
 $(BIN_DIR)/test_main: $(TOOL_SRC)/test_main.cpp $(BUILD_DIR)/RegionGrowth.o $(BUILD_DIR)/TextDetection.o $(BUILD_DIR)/CharRegion.o
-	$(CXX) $^ $(CFLAGS) $(LDFLAGS) -o $@
+	$(CXX) $^ $(CFLAGS) $(OPENCV_INCL) $(OPENCV_LIBS) $(MRPT_LIBS) -o $@
 
 clean:
 	rm -rf $(BUILD_DIR)

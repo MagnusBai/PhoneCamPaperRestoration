@@ -58,7 +58,7 @@ public:
 		for (int i = 0; i < count_pixs; ++i) {
 			int x = region_pixs[i * 2] - x_min;
 			int y = region_pixs[i * 2 + 1] - y_min;
-			im.at < uchar > (y, x) = 150;
+			im.at < uchar > (y, x) = 50;
 		}
 //		for (int i = 0; i < count_contours; ++i) {
 //			int x = region_contours[i * 2] - x_min;
@@ -68,13 +68,30 @@ public:
 		for (int i = 0; i < count_edges; ++i) {
 			int x = char_edge[i * 2] - x_min;
 			int y = char_edge[i * 2 + 1] - y_min;
-			im.at < uchar > (y, x) = 255;
+			im.at < uchar > (y, x) = 150;
 		}
 
 		cv::imwrite(filename.c_str(), im);
 	}
 
+	bool is_measurable() {
+		int w = x_max-x_min+1;
+		int h = y_max-y_min+1;
+		bool is_ok = false;
+
+		// maybe these rule shold be set by
+		if(w>200 || h>200) {
+			is_ok = true;
+		}
+		if(w>20 && h>20 && (float(w)/float(h)>2.f || float(h)/float(w)>2.f) ) {
+			is_ok = true;
+		}
+		return is_ok;
+	}
+
 	void log();
+
+	void ransac_find_lines();
 
 	// data
 	vector<int> region_pixs;
