@@ -582,7 +582,7 @@ Mat swtFilterEdges(const Mat& input) {
 			bool is_cont = ((id0 % 2) == 0);
 
 			charRegionArray[region_id].push_region_pix(w, h);
-			if(is_cont) {
+			if (is_cont) {
 				charRegionArray[region_id].push_region_contours(w, h);
 			}
 			if (edge_swt.at < uchar > (h, w) != 0) {
@@ -594,16 +594,73 @@ Mat swtFilterEdges(const Mat& input) {
 	// temp
 	string char_filename = "char_img_";
 	for (int i = 0; i < count_char_regions; ++i) {
-		string name = char_filename+to_string(i)+".png";
+		string name = char_filename + to_string(i) + ".png";
 		cout << name << endl;
-		if(charRegionArray[i].is_measurable()) {
-			charRegionArray[i].plot_char_region( name );
+		if (charRegionArray[i].is_measurable()) {
+			cout << "\n\n finding " << i << "lines params \n\n\n";
 			charRegionArray[i].ransac_find_lines();
+			// charRegionArray[i].plot_char_region(name);
 		}
 	}
+	// temp plot global
+	Mat lines_im(input.size(), CV_8UC3, CharRegion::solarized_palette["base3"]);
+	for (int i = 0; i < count_char_regions; ++i) {
+		// draw region_pix
+		cout << "------" << charRegionArray[i].count_pixs << endl;
+
+		for (int j = 0; j < charRegionArray[i].count_pixs; ++j) {
+			int x = charRegionArray[i].region_pixs[j * 2];
+			int y = charRegionArray[i].region_pixs[j * 2 + 1];
+			// im.at < uchar > (y, x) = 50;
+			uchar bgr[3];
+			if(charRegionArray[i].const_nlines>0) {
+				bgr[0] = CharRegion::solarized_palette["yellow"][0];
+				bgr[1] = CharRegion::solarized_palette["yellow"][1];
+				bgr[2] = CharRegion::solarized_palette["yellow"][2];
+			}
+			else {
+				bgr[0] = CharRegion::solarized_palette["violet"][0];
+				bgr[1] = CharRegion::solarized_palette["violet"][1];
+				bgr[2] = CharRegion::solarized_palette["violet"][2];
+			}
+			lines_im.at < cv::Vec3b > (y, x)[0] = bgr[0];
+			lines_im.at < cv::Vec3b > (y, x)[1] = bgr[1];
+			lines_im.at < cv::Vec3b > (y, x)[2] = bgr[2];
+		}
+//		// draw edge
+		for (int j = 0; j < charRegionArray[i].count_edges; ++j) {
+			int x = charRegionArray[i].char_edge[j * 2];
+			int y = charRegionArray[i].char_edge[j * 2 + 1];
+			lines_im.at < cv::Vec3b > (y, x)[0] =
+					CharRegion::solarized_palette["base03"][0];
+			lines_im.at < cv::Vec3b > (y, x)[1] =
+					CharRegion::solarized_palette["base03"][1];
+			lines_im.at < cv::Vec3b > (y, x)[2] =
+					CharRegion::solarized_palette["base03"][2];
+		}
+		// draw line
+		cout << charRegionArray[i].const_nlines << " : ";
+		cout << charRegionArray[i].line_paramsPts_global.size() << endl ;
+		for (int j = 0; j < charRegionArray[i].const_nlines; ++j) {
+			if(j>=3) {
+				// break;
+			}
+			cv::line(lines_im,
+					cv::Point(charRegionArray[i].line_paramsPts_global[j * 4 + 0],
+							charRegionArray[i].line_paramsPts_global[j * 4 + 1]),
+					cv::Point(charRegionArray[i].line_paramsPts_global[j * 4 + 2],
+							charRegionArray[i].line_paramsPts_global[j * 4 + 3]),
+					CharRegion::solarized_palette["magenta"],
+					1);
+		}
+
+	}
+	imwrite("im_lines.png", lines_im);
 
 	//// free pres_mat
 	delete[] pres_mat;
+
+	cout << endl << 100.f/0.f << "   " << -1.f/0.f << endl;
 
 	return edge_swt;
 }

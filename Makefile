@@ -1,5 +1,6 @@
 CXX=g++ -std=c++11
 
+LDFLAGS=-static-libstdc++
 CFLAGS=-I./include
 OPENCV_INCL=
 OPENCV_LIBS=-lopencv_core -lopencv_highgui -lopencv_imgproc
@@ -30,7 +31,10 @@ $(BUILD_DIR)/CharRegion.o: $(SRC)/CharRegion.cpp
 	$(CXX) $^ $(CFLAGS) $(OPENCV_INCL) $(MRPT_INCL) -c -o $@
 
 $(BIN_DIR)/test_main: $(TOOL_SRC)/test_main.cpp $(BUILD_DIR)/RegionGrowth.o $(BUILD_DIR)/TextDetection.o $(BUILD_DIR)/CharRegion.o
-	$(CXX) $^ $(CFLAGS) $(OPENCV_INCL) $(OPENCV_LIBS) $(MRPT_LIBS) -o $@
+	$(CXX) $^ $(LDFLAGS) $(CFLAGS) $(OPENCV_INCL) $(OPENCV_LIBS) $(MRPT_LIBS) -o $@
 
 clean:
 	rm -rf $(BUILD_DIR)
+
+clean-im:
+	rm *.png

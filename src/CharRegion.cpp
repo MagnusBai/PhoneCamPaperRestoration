@@ -22,12 +22,41 @@ using namespace std;
 
 mrpt::gui::CDisplayWindow3DPtr win;
 
-void CharRegion::log() {
-	cout << "fuckyou" << endl;
+
+// key function 1
+bool CharRegion::is_measurable() {
+	int w = x_max - x_min + 1;
+	int h = y_max - y_min + 1;
+	bool is_ok = false;
+
+	// maybe these rule shold be set by
+	if (w > 200 || h > 200) {
+		is_ok = true;
+	}
+	if (w > 20 && h > 20
+			&& (float(w) / float(h) > 2.f || float(h) / float(w) > 2.f)) {
+		is_ok = true;
+	}
+	return is_ok;
 }
 
+unordered_map<string, cv::Scalar> CharRegion::solarized_palette =
+	{
+		{string("base03"), cv::Scalar(54, 43, 0)},		// dark bg
+		{string("base3"), cv::Scalar(227, 246, 253)},		// light bg
+		{string("yellow"), cv::Scalar(0, 137, 181)},
+		{string("orange"), cv::Scalar(22, 75, 203)},
+		{string("magenta"), cv::Scalar(130, 54, 211)},
+		{string("violet"), cv::Scalar(196, 113, 108)},
+		{string("blue"), cv::Scalar(210, 139, 38)},
+		{string("cyan"), cv::Scalar(152, 161, 42)},
+		{string("green"), cv::Scalar(0, 153, 133)},
+	};
+
+
+// key function 2
 void CharRegion::ransac_find_lines() {
-	if(count_edges<30) {
+	if (count_edges < 30) {
 		cout << "num of edge pixes if not enought!!!" << endl;
 		return;
 	}
@@ -35,26 +64,208 @@ void CharRegion::ransac_find_lines() {
 	CVectorDouble xs, ys;
 
 	for (int i = 0; i < count_edges; ++i) {
-		xs.push_back(char_edge[i * 2]);
-		ys.push_back(char_edge[i * 2 + 1]);
+		xs.push_back(char_edge[i * 2]-x_min);
+		ys.push_back(char_edge[i * 2 + 1]-y_min);
 	}
 
 	vector < pair<size_t, TLine2D> > detectedLines;
 	const double DIST_THRESHOLD = 1.;
 
-	CTicTac tictac;
-
 	ransac_detect_2D_lines(xs, ys, detectedLines, DIST_THRESHOLD, 20);
 
 	// Display output:
 	cout << "RANSAC method: ransac_detect_2D_lines" << endl;
-	cout << " Computation time: " << tictac.Tac() * 1000.0 << " ms" << endl;
 	cout << " " << detectedLines.size() << " lines detected." << endl;
 
-	for(vector < pair<size_t, TLine2D> >::iterator it=detectedLines.begin();
-			it<detectedLines.end(); ++it) {
-		cout << "\t\t" << "!!!!!" << it->first << "\t";
-		cout << it->second.coefs[0] << "\t" << it->second.coefs[1] << "\t" << it->second.coefs[2];
-		cout <<endl;
+	// SAVE LINE PARAMS
+	const_nlines = detectedLines.size();
+	cout << "const_nlines: " << const_nlines << endl << endl;
+	line_paramsABC = vector<double>(3 * const_nlines, 0.);
+	line_paramsPts = vector<int>(4 * const_nlines, 0);
+	line_pts = vector<int>(const_nlines, 0);
+
+	// for(int i=0; i<const_nlines; ++i) {
+	int i=0;
+	for (vector<pair<size_t, TLine2D> >::iterator p = detectedLines.begin();
+			p != detectedLines.end(); ++p) {
+
+		int count_pt = p->first;
+		double A = p->second.coefs[0];
+		double B = p->second.coefs[1];
+		double C = p->second.coefs[2];
+		int x1, y1, x2, y2;
+		ABC_2points(A, B, C, x1, y1, x2, y2);
+		line_pts[i] = count_pt;
+		line_paramsABC[i*3+0] = A;
+		line_paramsABC[i*3+1] = B;
+		line_paramsABC[i*3+2] = C;
+		line_paramsPts[i*4+0] = x1;
+		line_paramsPts[i*4+1] = y1;
+		line_paramsPts[i*4+2] = x2;
+		line_paramsPts[i*4+3] = y2;
+		++i;
+	}
+
+	// convert local points to global's
+	cvtLocal2Global();
+
+	// calc_lines_info();
+}
+
+CharRegion::CharRegion(const int arg_count_pixs, const int arg_count_contours,
+		const int arg_count_edges, const int arg_x_max, const int arg_x_min,
+		const int arg_y_max, const int arg_y_min) :
+			count_pixs(arg_count_pixs),
+			count_contours(arg_count_contours),
+			count_edges(arg_count_edges),
+			x_max(arg_x_max),
+			x_min(arg_x_min),
+			y_max(arg_y_max),
+			y_min(arg_y_min),
+			icap_pixs(0),
+			icap_contours(0),
+			icap_edges(0) {
+
+		region_pixs.resize(count_pixs * 2, 0);
+		region_contours.resize(count_contours * 2, 0);
+		char_edge.resize(count_edges * 2, 0);
+
+		const_nlines = 0;
+		line_paramsABC = vector<double>(0);
+		line_paramsPts = vector<int>(0);
+		line_paramsABC_global = vector<double>(0);
+		line_paramsPts_global = vector<int>(0);
+		line_pts = vector<int>(0);
+//		line_slopes = vector<float>(0);
+//		line_angles = vector<float>(0);
+}
+
+void CharRegion::push_region_pix(const int arg_x, const int arg_y) {
+	region_pixs[2 * icap_pixs] = arg_x;
+	region_pixs[2 * icap_pixs + 1] = arg_y;
+	++icap_pixs;
+}
+
+void CharRegion::push_region_contours(const int arg_x, const int arg_y) {
+	region_contours[2 * icap_contours] = arg_x;
+	region_contours[2 * icap_contours + 1] = arg_y;
+	++icap_contours;
+}
+
+void CharRegion::push_edges(const int arg_x, const int arg_y) {
+	char_edge[2 * icap_edges] = arg_x;
+	char_edge[2 * icap_edges + 1] = arg_y;
+	++icap_edges;
+}
+
+void CharRegion::plot_char_region(const string& filename) {
+	cout << y_max << " , " << y_min << endl;
+	cout << x_max << " , " << x_min << endl;
+	cv::Mat im(y_max - y_min + 1, x_max - x_min + 1, CV_8UC3,
+			CharRegion::solarized_palette["base3"]);
+
+	// draw region_pix
+	for (int i = 0; i < count_pixs; ++i) {
+		int x = region_pixs[i * 2] - x_min;
+		int y = region_pixs[i * 2 + 1] - y_min;
+		// im.at < uchar > (y, x) = 50;
+		im.at<cv::Vec3b>(y, x)[0] = CharRegion::solarized_palette["violet"][0];
+		im.at<cv::Vec3b>(y, x)[1] = CharRegion::solarized_palette["violet"][1];
+		im.at<cv::Vec3b>(y, x)[2] = CharRegion::solarized_palette["violet"][2];
+	}
+
+	// draw edge
+	for (int i = 0; i < count_edges; ++i) {
+		int x = char_edge[i * 2] - x_min;
+		int y = char_edge[i * 2 + 1] - y_min;
+		im.at<cv::Vec3b>(y, x)[0] = CharRegion::solarized_palette["base03"][0];
+		im.at<cv::Vec3b>(y, x)[1] = CharRegion::solarized_palette["base03"][1];
+		im.at<cv::Vec3b>(y, x)[2] = CharRegion::solarized_palette["base03"][2];
+	}
+
+	// draw line
+	for (int i = 0; i < const_nlines; ++i) {
+		cv::line(im,
+			cv::Point(line_paramsPts[i * 4 + 0], line_paramsPts[i * 4 + 1]),
+			cv::Point(line_paramsPts[i * 4 + 2], line_paramsPts[i * 4 + 3]),
+			CharRegion::solarized_palette["magenta"],
+			1);
+	}
+
+	cv::imwrite(filename.c_str(), im);
+}
+
+void CharRegion::ABC_2points(const double A, const double B, const double C, int& x1,
+		int& y1, int& x2, int& y2) {
+	double x1d, y1d, x2d, y2d;
+	ABC_2points(A, B, C, x1d, y1d, x2d, y2d);
+	y1 = int(round(y1d));
+	y2 = int(round(y2d));
+	x1 = int(round(x1d));
+	x2 = int(round(x2d));
+}
+
+void CharRegion::ABC_2points(const double A, const double B, const double C,
+			double& x1, double& y1, double& x2, double& y2) {
+	if (B == 0.) {
+		x1 = -C / A;
+		x2 = x1;
+		y1 = 1.;
+		y2 = 1.;
+	} else {
+		double base = 1600.;	// setting larger than most image is ok
+		x1 = 0.;
+		y1 = -C / B;
+		x2 = base;
+		y2 = -(C + A*base) / B;
+	}
+}
+
+void CharRegion::cvtLocal2Global() {
+	line_paramsABC_global = line_paramsABC;
+	line_paramsPts_global = line_paramsPts;
+	for(int i=0; i<const_nlines; ++i) {
+		double A_p = line_paramsABC_global[i*3+0];
+		double B_p = line_paramsABC_global[i*3+1];
+		double C_p = line_paramsABC_global[i*3+2]-(A_p*x_min+B_p*y_min);
+		line_paramsABC_global[i*3+2] = C_p;
+		int x1_p, y1_p, x2_p, y2_p;
+		ABC_2points(A_p, B_p, C_p, x1_p, y1_p, x2_p, y2_p);
+		line_paramsPts_global[i*4+0] = x1_p;
+		line_paramsPts_global[i*4+1] = y1_p;
+		line_paramsPts_global[i*4+2] = x2_p;
+		line_paramsPts_global[i*4+3] = y2_p;
+	}
+}
+
+// slope = rise/move = y1-y0/x1-x0
+// angle is in the interval of [0, pi] radians
+void CharRegion::get_slope_angle(double A, double B, double C, float& slope,
+			float& angle) {
+	slope = -float(A)/float(B);
+	angle = atan(1.f/slope);	// atan(x), in the
+								// interval [-pi/2,+pi/2] radians.
+	if(angle<0) {
+		angle += M_PI;
+	}
+}
+
+float CharRegion::get_angle_diff(float a1, float a2) {
+	float d1 = abs(a1-a2);
+	float d2 = M_PI-d1;
+	return min(d1, d2);
+}
+
+void CharRegion::calc_lines_info() {
+	line_slopes.resize(const_nlines);
+	line_angles.resize(const_nlines);
+	for(int i=0; i<const_nlines; ++i) {
+		double A = line_paramsABC_global[i*3+0];
+		double B = line_paramsABC_global[i*3+1];
+		double C = line_paramsABC_global[i*3+2];
+		float slope, angle;
+		get_slope_angle(A, B, C, slope, angle);
+		line_slopes[i] = slope;
+		line_angles[i] = angle;
 	}
 }
