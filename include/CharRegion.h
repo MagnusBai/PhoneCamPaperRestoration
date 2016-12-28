@@ -50,6 +50,8 @@ public:
 	const int x_min;
 	const int y_max;
 	const int y_min;
+
+	int const_nlines;
 	vector<double> line_paramsABC; // A, B, C
 	vector<int> line_paramsPts;	// X1, Y1, X2, Y2
 	vector<double> line_paramsABC_global;	// A_global, B_global, C_global
@@ -58,12 +60,13 @@ public:
 
 	vector<float> line_slopes;
 	vector<float> line_angles;
-	int const_nlines;
+
+	vector<vector<int>> line_clusters_ids;
 
 	static unordered_map<string, cv::Scalar> solarized_palette;
 
-	vector<vector<int>> line_cluster_data;	// {{id11,id12,..},{is21, }, ...}
-	vector<int> inde_line; //
+	template <typename T>
+	static T get_angle_diff(T a1, T a2);
 
 private:
 	// auxiliary var
@@ -84,9 +87,17 @@ private:
 	void get_slope_angle(double A, double B, double C, float& slope,
 			float& angle);
 
-	float get_angle_diff(float a1, float a2);
+	// float get_angle_diff(float a1, float a2);
 
 	void calc_lines_info();
 };
+
+template<typename T>
+void partition1dData(const vector<T>& Data, const T distance_thresh,
+		vector<vector<int>>& id_hierachy);
+
+template<typename T>
+void basicalHierarchicalAlg(const vector<T>& data, const T diff_thresh,
+		vector<vector<int>>& id_hierachy);
 
 #endif /* INCLUDE_CHARREGION_H_ */

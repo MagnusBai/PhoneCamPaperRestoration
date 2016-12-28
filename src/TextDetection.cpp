@@ -401,9 +401,6 @@ Mat swtFilterEdges(const Mat& input) {
 	assert(input.depth() == CV_8U);
 	assert(input.channels() == 3);
 
-	std::cout << "Running textDetection with dark_on_light " << dark_on_light
-			<< std::endl;
-
 	imwrite("original.png", input);
 
 	// Convert to grayscale
@@ -602,11 +599,12 @@ Mat swtFilterEdges(const Mat& input) {
 			// charRegionArray[i].plot_char_region(name);
 		}
 	}
+
 	// temp plot global
 	Mat lines_im(input.size(), CV_8UC3, CharRegion::solarized_palette["base3"]);
 	for (int i = 0; i < count_char_regions; ++i) {
 		// draw region_pix
-		cout << "------" << charRegionArray[i].count_pixs << endl;
+		// cout << "------" << charRegionArray[i].count_pixs << endl;
 
 		for (int j = 0; j < charRegionArray[i].count_pixs; ++j) {
 			int x = charRegionArray[i].region_pixs[j * 2];
@@ -639,8 +637,8 @@ Mat swtFilterEdges(const Mat& input) {
 					CharRegion::solarized_palette["base03"][2];
 		}
 		// draw line
-		cout << charRegionArray[i].const_nlines << " : ";
-		cout << charRegionArray[i].line_paramsPts_global.size() << endl ;
+		// cout << charRegionArray[i].const_nlines << " : ";
+		// cout << charRegionArray[i].line_paramsPts_global.size() << endl ;
 		for (int j = 0; j < charRegionArray[i].const_nlines; ++j) {
 			if(j>=3) {
 				// break;

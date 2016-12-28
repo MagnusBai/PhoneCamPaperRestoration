@@ -12,6 +12,8 @@
 #include <mrpt/opengl/stock_objects.h>
 #include <mrpt/opengl/CTexturedPlane.h>
 
+#include <algorithm>
+
 using namespace mrpt;
 using namespace mrpt::utils;
 using namespace mrpt::gui;
@@ -109,7 +111,12 @@ void CharRegion::ransac_find_lines() {
 	// convert local points to global's
 	cvtLocal2Global();
 
-	// calc_lines_info();
+	calc_lines_info();
+
+	vector<vector<int>> id_hierachy;
+	basicalHierarchicalAlg<float>(line_angles, M_PI/60., id_hierachy);	// 180/60=3
+
+	line_clusters_ids = id_hierachy;
 }
 
 CharRegion::CharRegion(const int arg_count_pixs, const int arg_count_contours,
@@ -136,8 +143,9 @@ CharRegion::CharRegion(const int arg_count_pixs, const int arg_count_contours,
 		line_paramsABC_global = vector<double>(0);
 		line_paramsPts_global = vector<int>(0);
 		line_pts = vector<int>(0);
-//		line_slopes = vector<float>(0);
-//		line_angles = vector<float>(0);
+
+		line_slopes = vector<float>(0);
+		line_angles = vector<float>(0);
 }
 
 void CharRegion::push_region_pix(const int arg_x, const int arg_y) {
@@ -250,22 +258,119 @@ void CharRegion::get_slope_angle(double A, double B, double C, float& slope,
 	}
 }
 
-float CharRegion::get_angle_diff(float a1, float a2) {
-	float d1 = abs(a1-a2);
-	float d2 = M_PI-d1;
+//float CharRegion::get_angle_diff(float a1, float a2) {
+//	float d1 = abs(a1-a2);
+//	float d2 = M_PI-d1;
+//	return min(d1, d2);
+//}
+template <typename T>
+T CharRegion::get_angle_diff(T a1, T a2) {
+	T d1 = abs(a1-a2);
+	T d2 = M_PI-d1;
 	return min(d1, d2);
 }
 
 void CharRegion::calc_lines_info() {
 	line_slopes.resize(const_nlines);
 	line_angles.resize(const_nlines);
+
+	// calc each lines angle and slope
 	for(int i=0; i<const_nlines; ++i) {
 		double A = line_paramsABC_global[i*3+0];
 		double B = line_paramsABC_global[i*3+1];
 		double C = line_paramsABC_global[i*3+2];
+		cout << "(" << A << " , " << B << " , " << C << ")" << endl;
 		float slope, angle;
 		get_slope_angle(A, B, C, slope, angle);
 		line_slopes[i] = slope;
 		line_angles[i] = angle;
 	}
+
+	// cluster lines in an very closed angle
+
 }
+
+
+// ----------
+// DESIGN PATTERN: BETTER PASS DIST_FUN() AS ARGUMENTS
+template<typename T>
+void basicalHierarchicalAlg(const vector<T>& data, const T diff_thresh,
+		vector<vector<int>>& id_hierachy) {
+	// temp printing
+	cout << endl << endl << "data:~~ thresh:"  << diff_thresh << endl;
+	// for(auto it=data.begin(); it!=data.end(); ++it) {
+	for(int i=0; i<data.size(); ++i) {
+		cout << "  (" << i << ")" << data[i] << "  ";
+	}
+	cout << endl << endl;
+
+	int count_data = data.size();
+	vector<vector<T>> diff_mat = vector<vector<T>>(
+									count_data, vector<T>(count_data, T(0)) );
+	for(int h=0; h<count_data; ++h) {
+		for(int w=0; w<count_data; ++w) {
+			//   EXTRA COMPUTATION , symmetrical matrix may save 1/2 time
+			diff_mat[h][w] = CharRegion::get_angle_diff<T>(data[h], data[w]);
+		}
+	}
+
+		// init remaining_data_dict
+	unordered_map<int, int> remaining_data_dict;
+	for(int i=0; i<count_data; ++i) {
+		remaining_data_dict[i] = 0;
+	}
+		// setting
+	unordered_map<int, int> todo_data_dict;
+	vector<int> group_ids;
+
+	while(remaining_data_dict.size()!=0) {
+		int start_id = remaining_data_dict.begin()->first;	// extract first elem
+		todo_data_dict[start_id] = 0;
+		remaining_data_dict.erase(start_id);
+
+		group_ids.clear();
+
+		while(todo_data_dict.size()!=0) {
+			int cur_id = todo_data_dict.begin()->first;
+			todo_data_dict.erase(cur_id);
+			group_ids.push_back(cur_id);
+			// for(int id=cur_id+1; id<count_data; ++id) {
+			for(int id=0; id<count_data; ++id) {
+				if(id==cur_id) {
+					continue;
+				}
+					// I think (cur_id, id) can void equivalent pair of <a, b>, <b, a>
+				if(diff_mat[cur_id][id]<=diff_thresh) {
+					if(remaining_data_dict.find(id)!=remaining_data_dict.end()) {
+						// in the remaining_data_dict
+						todo_data_dict[id] = 0;
+						remaining_data_dict.erase(id);
+					}
+				}		// is an elem that can be grouped together
+			}		// id: [cur_id+1: count_data]
+		}		// todo_data_dict.size!=0
+
+		sort(group_ids.begin(), group_ids.end());
+
+		id_hierachy.push_back(group_ids);
+
+	}		// remaining_data_dict.size()!=0
+
+	sort(id_hierachy.begin(), id_hierachy.end(),
+			[](const vector<int>& a, const vector<int>& b) -> bool
+			{
+				return a.size() > b.size();
+			});
+
+	for(int i_cluster=0; i_cluster<id_hierachy.size(); ++i_cluster) {
+		vector<int>& ids = id_hierachy[i_cluster];
+		cout << " [  ";
+		for(int i_elems=0; i_elems<ids.size(); ++i_elems) {
+			cout << "(" << ids[i_elems] << ")" << data[ids[i_elems]] << "  ";
+		}
+		cout << "] \n";
+	}
+
+}
+
+
