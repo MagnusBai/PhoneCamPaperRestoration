@@ -600,7 +600,7 @@ Mat swtFilterEdges(const Mat& input) {
 		}
 	}
 
-	// temp plot global
+	// TEMP: plot lines
 	Mat lines_im(input.size(), CV_8UC3, CharRegion::solarized_palette["base3"]);
 	for (int i = 0; i < count_char_regions; ++i) {
 		// draw region_pix
@@ -617,9 +617,9 @@ Mat swtFilterEdges(const Mat& input) {
 				bgr[2] = CharRegion::solarized_palette["yellow"][2];
 			}
 			else {
-				bgr[0] = CharRegion::solarized_palette["violet"][0];
-				bgr[1] = CharRegion::solarized_palette["violet"][1];
-				bgr[2] = CharRegion::solarized_palette["violet"][2];
+				bgr[0] = CharRegion::solarized_palette["green"][0];
+				bgr[1] = CharRegion::solarized_palette["green"][1];
+				bgr[2] = CharRegion::solarized_palette["green"][2];
 			}
 			lines_im.at < cv::Vec3b > (y, x)[0] = bgr[0];
 			lines_im.at < cv::Vec3b > (y, x)[1] = bgr[1];
@@ -648,17 +648,58 @@ Mat swtFilterEdges(const Mat& input) {
 							charRegionArray[i].line_paramsPts_global[j * 4 + 1]),
 					cv::Point(charRegionArray[i].line_paramsPts_global[j * 4 + 2],
 							charRegionArray[i].line_paramsPts_global[j * 4 + 3]),
-					CharRegion::solarized_palette["magenta"],
+					CharRegion::solarized_palette["base03"],
 					1);
 		}
 
 	}
 	imwrite("im_lines.png", lines_im);
+	// TEMP: plot lines
+
+	vector<pair<float, float>> angles_scores_set;
+	for(int i = 0; i < count_char_regions; ++i) {
+		vector<pair<float, float>>& newbies = charRegionArray[i].region_angle_scores;
+		angles_scores_set.insert(angles_scores_set.end(),
+									newbies.begin(), newbies.end());
+	}
+	cout << endl << endl << endl;
+	for(int i=0; i<angles_scores_set.size(); ++i) {
+		cout << "(" << angles_scores_set[i].first << ", " << angles_scores_set[i].second;
+		cout << ")\t";
+	}
+	cout << endl << endl << endl;
+
+
+	// TEMP: plot region lines
+	for(int i = 0; i < count_char_regions; ++i) {
+		CharRegion& region = charRegionArray[i];
+		if(region.const_nlines>0) {
+			Point pt01 = Point(region.x_min, region.y_min);
+			Point pt02 = Point(region.x_max, region.y_max);
+
+			rectangle(lines_im, Rect(pt01, pt02), CharRegion::solarized_palette["cyan"], 2);
+			for(int j=0; j<region.line_clusters_ids.size(); ++j) {
+				int line_id = region.line_clusters_ids[j][0];
+				int xi1, yi1, xi2, yi2;
+				xi1 = region.bb_intersection_pts[line_id*4+0];
+				yi1 = region.bb_intersection_pts[line_id*4+1];
+				xi2 = region.bb_intersection_pts[line_id*4+2];
+				yi2 = region.bb_intersection_pts[line_id*4+3];
+
+				if(xi1!=-1) {
+					line(lines_im, Point(xi1, yi1), Point(xi2, yi2), CharRegion::solarized_palette["cyan"], 1);
+				}
+			}
+		}
+	}
+	// TEMP: plot region lines
+	imwrite("region_lines.png", lines_im);
+
 
 	//// free pres_mat
 	delete[] pres_mat;
 
-	cout << endl << 100.f/0.f << "   " << -1.f/0.f << endl;
+
 
 	return edge_swt;
 }

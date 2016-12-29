@@ -16,6 +16,7 @@
 #include <stdlib.h>
 
 #include <unordered_map>
+#include <utility>
 
 // #define _USE_MATH_DEFINES
 
@@ -55,13 +56,19 @@ public:
 	vector<double> line_paramsABC; // A, B, C
 	vector<int> line_paramsPts;	// X1, Y1, X2, Y2
 	vector<double> line_paramsABC_global;	// A_global, B_global, C_global
-	vector<int> line_paramsPts_global;		// X1_global, X2_global,
+	vector<int> line_paramsPts_global;		// X1_global, Y1_global,
+	vector<int> bb_intersection_pts;	// x1, y1, x2, y2, ...
 	vector<int> line_pts;
 
 	vector<float> line_slopes;
 	vector<float> line_angles;
 
 	vector<vector<int>> line_clusters_ids;
+
+//	vector<float> region_angles;		// the following 2 are index draw from line_clusters_ids
+//	vector<float> region_angles_score;
+
+	vector<pair<float, float>> region_angle_scores;
 
 	static unordered_map<string, cv::Scalar> solarized_palette;
 
@@ -81,6 +88,8 @@ private:
 			double& x1, double& y1, double& x2, double& y2);
 
 	void cvtLocal2Global();
+
+	void calcIntersectionLine();
 
 	void refine_lines();
 
