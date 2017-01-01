@@ -31,13 +31,14 @@ bool CharRegion::is_measurable() {
 	bool is_ok = false;
 
 	// maybe these rule shold be set by
-	if (w > 200 || h > 200) {
+	if (w > 100 || h > 100) {		// large type
 		is_ok = true;
 	}
 	if (w > 20 && h > 20
-			&& (float(w) / float(h) > 2.f || float(h) / float(w) > 2.f)) {
+			&& (float(w) / float(h) > 2.f || float(h) / float(w) > 2.f)) {	// small type
 		is_ok = true;
 	}
+
 	return is_ok;
 }
 
@@ -64,16 +65,16 @@ void CharRegion::ransac_find_lines() {
 	CVectorDouble xs, ys;
 
 	// using char edge
-	for (int i = 0; i < count_edges; ++i) {
-		xs.push_back(char_edge[i * 2] - x_min);
-		ys.push_back(char_edge[i * 2 + 1] - y_min);
-	}
+//	for (int i = 0; i < count_edges; ++i) {
+//		xs.push_back(char_edge[i * 2] - x_min);
+//		ys.push_back(char_edge[i * 2 + 1] - y_min);
+//	}
 
 	// using contours edge
-//	for (int i = 0; i < count_contours; ++i) {
-//		xs.push_back(region_contours[i * 2] - x_min);
-//		ys.push_back(region_contours[i * 2 + 1] - y_min);
-//	}
+	for (int i = 0; i < count_contours; ++i) {
+		xs.push_back(region_contours[i * 2] - x_min);
+		ys.push_back(region_contours[i * 2 + 1] - y_min);
+	}
 
 	vector < pair<size_t, TLine2D> > detectedLines;
 	const double DIST_THRESHOLD = 1.;
