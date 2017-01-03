@@ -106,7 +106,7 @@ void partition1dData(const vector<T>& Data, const T distance_thresh,
 		vector<vector<int>>& id_hierachy);
 
 template<typename T>
-void basicalHierarchicalAlg(const vector<T>& data, const T diff_thresh,
+void basicHierarchicalAlg(const vector<T>& data, const T diff_thresh,
 		vector<vector<int>>& id_hierachy);
 
 #endif /* INCLUDE_CHARREGION_H_ */

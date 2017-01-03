@@ -122,7 +122,7 @@ void CharRegion::ransac_find_lines() {
 	calcIntersectionLine();
 
 	vector<vector<int>> id_hierachy;
-	basicalHierarchicalAlg<float>(line_angles, M_PI / 60., id_hierachy);// 180/60=3
+	basicHierarchicalAlg<float>(line_angles, M_PI / 60., id_hierachy);// 180/60=3
 
 	line_clusters_ids = id_hierachy;
 
@@ -131,7 +131,7 @@ void CharRegion::ransac_find_lines() {
 		float angle = line_angles[id_hierachy[i][0]];
 		float score = 0.f;
 		if (id_hierachy[i].size() > 1) {
-			score = 2.f + 0.2 * id_hierachy[i].size();	// angle scoring rules
+			score = 1.f * id_hierachy[i].size();	// angle scoring rules
 		} else {
 			score = 1.f;
 		}
@@ -315,15 +315,15 @@ void CharRegion::calc_lines_info() {
 // ----------
 // DESIGN PATTERN: BETTER PASS DIST_FUN() AS ARGUMENTS
 template<typename T>
-void basicalHierarchicalAlg(const vector<T>& data, const T diff_thresh,
+void basicHierarchicalAlg(const vector<T>& data, const T diff_thresh,
 		vector<vector<int>>& id_hierachy) {
 	// temp printing
 	cout << endl << endl << "data:~~ thresh:" << diff_thresh << endl;
-	// for(auto it=data.begin(); it!=data.end(); ++it) {
 	for (int i = 0; i < data.size(); ++i) {
 		cout << "  (" << i << ")" << data[i] << "  ";
 	}
 	cout << endl << endl;
+	// temp printing
 
 	int count_data = data.size();
 	vector < vector < T >> diff_mat = vector<vector<T>>(count_data,
@@ -384,6 +384,7 @@ void basicalHierarchicalAlg(const vector<T>& data, const T diff_thresh,
 				return a.size() > b.size();
 			});
 
+	// temp printing
 	for (int i_cluster = 0; i_cluster < id_hierachy.size(); ++i_cluster) {
 		vector<int>& ids = id_hierachy[i_cluster];
 		cout << " [  ";
@@ -392,7 +393,7 @@ void basicalHierarchicalAlg(const vector<T>& data, const T diff_thresh,
 		}
 		cout << "] \n";
 	}
-
+	// temp printing
 }
 
 void CharRegion::calcIntersectionLine() {

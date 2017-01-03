@@ -692,13 +692,66 @@ Mat swtFilterEdges(const Mat& input) {
 			}
 		}
 	}
-	// TEMP: plot region lines
 	imwrite("region_lines.png", lines_im);
+	// TEMP: plot region lines
 
+	// GET GLOBAL AVERAGE SLOPE
+	int count_rslopes = 0;		// rslope is short for region-slope
+	for(int i = 0; i < count_char_regions; ++i) {
+		CharRegion& region = charRegionArray[i];
+		count_rslopes += region.line_clusters_ids.size();
+	}
+	vector<int> region_ids = vector<int>(count_rslopes, 0);
+	vector<float> rslope_angles = vector<float>(count_rslopes, 0.f);
+	vector<float> rslope_scores = vector<float>(count_rslopes, 0.f);
+	int i_rslope = 0;
+	for(int i = 0; i < count_char_regions; ++i) {
+		CharRegion& region = charRegionArray[i];
+		for(int j=0; j<region.region_angle_scores.size(); ++j) {
+			region_ids[i_rslope] = i;
+			rslope_angles[i_rslope] = region.region_angle_scores[j].first;
+			rslope_scores[i_rslope] = region.region_angle_scores[j].second;
+			++i_rslope;
+		}
+	}
+
+	vector<vector<int>> rslope_id_hierachy;
+	basicHierarchicalAlg<float>(rslope_angles, M_PI/180., rslope_id_hierachy);
+	vector<int>& first_class_id = rslope_id_hierachy[0];
+
+	// TEMP plotting
+	i_rslope = 0;
+	vector<int>::iterator plot_id_iter = first_class_id.begin();
+	for(int i = 0; i < count_char_regions; ++i) {
+		CharRegion& region = charRegionArray[i];
+		for(int j=0; j<region.region_angle_scores.size(); ++j) {
+			if(plot_id_iter==first_class_id.end()) {
+				break;
+			}
+			if(i_rslope==*plot_id_iter) {
+
+				// cout << "(" << i_rslope << ")" << region.region_angle_scores[j].first << endl;
+				vector<int>& active_lines_id = region.line_clusters_ids[j];
+				for(vector<int>::iterator it_id=active_lines_id.begin(); it_id<active_lines_id.end(); ++it_id) {
+					int l_id = *it_id;
+					int x1, y1, x2, y2;
+					x1 = region.line_paramsPts_global[l_id*4+0];
+					y1 = region.line_paramsPts_global[l_id*4+1];
+					x2 = region.line_paramsPts_global[l_id*4+2];
+					y2 = region.line_paramsPts_global[l_id*4+3];
+					line(lines_im, Point(x1, y1), Point(x2, y2), CharRegion::solarized_palette["magenta"], 1);
+				}
+
+				++plot_id_iter;
+			}
+			++i_rslope;
+		}
+	}
+	imwrite("coarse_fitting.png", lines_im);
+	// TEMP plotting
 
 	//// free pres_mat
 	delete[] pres_mat;
-
 
 
 	return edge_swt;
