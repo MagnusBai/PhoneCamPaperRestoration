@@ -12,7 +12,7 @@
 #include <mrpt/opengl/stock_objects.h>
 #include <mrpt/opengl/CTexturedPlane.h>
 
-#include <mrpt/math/CVectorTemplate.h>
+// #include <mrpt/math/CVectorTemplate.h>
 
 #include <algorithm>
 
@@ -46,12 +46,14 @@ bool CharRegion::is_measurable() {
   return is_ok;
 }
 
-unordered_map<string, cv::Scalar> CharRegion::solarized_palette = { { string("base03"), cv::Scalar(54, 43, 0) },// dark bg
-    { string("base02"), cv::Scalar(117, 110, 88) }, { string("base01"), cv::Scalar(66, 54, 7) }, { string("base3"),
-        cv::Scalar(227, 246, 253) },		// light bg
-    { string("yellow"), cv::Scalar(0, 137, 181) }, { string("orange"), cv::Scalar(22, 75, 203) }, { string("magenta"),
-        cv::Scalar(130, 54, 211) }, { string("violet"), cv::Scalar(196, 113, 108) }, { string("blue"), cv::Scalar(210,
-        139, 38) }, { string("cyan"), cv::Scalar(152, 161, 42) }, { string("green"), cv::Scalar(0, 153, 133) }, };
+unordered_map<string, cv::Scalar> CharRegion::solarized_palette = {
+    { string("base03"), cv::Scalar(54, 43, 0) },		// dark bg
+    { string("base02"), cv::Scalar(117, 110, 88) }, { string("base01"), cv::Scalar(66, 54, 7) },
+    { string("base3"), cv::Scalar(227, 246, 253) },		// light bg
+    { string("yellow"), cv::Scalar(0, 137, 181) }, { string("orange"), cv::Scalar(22, 75, 203) }, {
+        string("magenta"), cv::Scalar(130, 54, 211) },
+    { string("violet"), cv::Scalar(196, 113, 108) }, { string("blue"), cv::Scalar(210, 139, 38) }, {
+        string("cyan"), cv::Scalar(152, 161, 42) }, { string("green"), cv::Scalar(0, 153, 133) }, };
 
 // key function 2
 void CharRegion::ransac_find_lines() {
@@ -92,7 +94,8 @@ void CharRegion::ransac_find_lines() {
 
   // for(int i=0; i<const_nlines; ++i) {
   int i = 0;
-  for (vector<pair<size_t, TLine2D> >::iterator p = detectedLines.begin(); p != detectedLines.end(); ++p) {
+  for (vector<pair<size_t, TLine2D> >::iterator p = detectedLines.begin(); p != detectedLines.end();
+      ++p) {
 
     int count_pt = p->first;
     double A = p->second.coefs[0];
@@ -136,10 +139,12 @@ void CharRegion::ransac_find_lines() {
   }
 }
 
-CharRegion::CharRegion(const int arg_count_pixs, const int arg_count_contours, const int arg_count_edges,
-    const int arg_x_max, const int arg_x_min, const int arg_y_max, const int arg_y_min) :
-    count_pixs(arg_count_pixs), count_contours(arg_count_contours), count_edges(arg_count_edges), x_max(arg_x_max), x_min(
-        arg_x_min), y_max(arg_y_max), y_min(arg_y_min), icap_pixs(0), icap_contours(0), icap_edges(0) {
+CharRegion::CharRegion(const int arg_count_pixs, const int arg_count_contours,
+    const int arg_count_edges, const int arg_x_max, const int arg_x_min, const int arg_y_max,
+    const int arg_y_min) :
+    count_pixs(arg_count_pixs), count_contours(arg_count_contours), count_edges(arg_count_edges), x_max(
+        arg_x_max), x_min(arg_x_min), y_max(arg_y_max), y_min(arg_y_min), icap_pixs(0), icap_contours(
+        0), icap_edges(0) {
 
   region_pixs.resize(count_pixs * 2, 0);
   region_contours.resize(count_contours * 2, 0);
@@ -204,14 +209,15 @@ void CharRegion::plot_char_region(const string& filename) {
   // draw line
   for (int i = 0; i < const_nlines; ++i) {
     cv::line(im, cv::Point(line_paramsPts[i * 4 + 0], line_paramsPts[i * 4 + 1]),
-        cv::Point(line_paramsPts[i * 4 + 2], line_paramsPts[i * 4 + 3]), CharRegion::solarized_palette["magenta"], 1);
+        cv::Point(line_paramsPts[i * 4 + 2], line_paramsPts[i * 4 + 3]),
+        CharRegion::solarized_palette["magenta"], 1);
   }
 
   cv::imwrite(filename.c_str(), im);
 }
 
-void CharRegion::ABC_2points(const double A, const double B, const double C, int& x1, int& y1, int& x2, int& y2,
-    double X_LO, double X_UP, double Y_LO, double Y_UP) {
+void CharRegion::ABC_2points(const double A, const double B, const double C, int& x1, int& y1,
+    int& x2, int& y2, double X_LO, double X_UP, double Y_LO, double Y_UP) {
   double x1d, y1d, x2d, y2d;
   ABC_2points(A, B, C, x1d, y1d, x2d, y2d, X_LO, X_UP, Y_LO, Y_UP);
   y1 = int(round(y1d));
@@ -220,8 +226,8 @@ void CharRegion::ABC_2points(const double A, const double B, const double C, int
   x2 = int(round(x2d));
 }
 
-void CharRegion::ABC_2points(const double A, const double B, const double C, double& x1, double& y1, double& x2,
-    double& y2, double X_LO, double X_UP, double Y_LO, double Y_UP) {
+void CharRegion::ABC_2points(const double A, const double B, const double C, double& x1, double& y1,
+    double& x2, double& y2, double X_LO, double X_UP, double Y_LO, double Y_UP) {
   // A x + B y + C = 0
   if (B == 0.) {		// x = xxx
     x1 = -C / A;
@@ -242,8 +248,8 @@ void CharRegion::ABC_2points(const double A, const double B, const double C, dou
   }
 }
 
-void CharRegion::twoPoints_ABC(const double x1, const double y1, const double x2, const double y2, double& A, double& B,
-    double& C) {
+void CharRegion::twoPoints_ABC(const double x1, const double y1, const double x2, const double y2,
+    double& A, double& B, double& C) {
   double move = x2 - x1;
   double rise = y2 - y1;
   if (move == 0) {
@@ -259,8 +265,8 @@ void CharRegion::twoPoints_ABC(const double x1, const double y1, const double x2
   }
 }
 
-void CharRegion::twoPoints_ABC(const int x1, const int y1, const int x2, const int y2, double& A, double& B,
-    double& C) {
+void CharRegion::twoPoints_ABC(const int x1, const int y1, const int x2, const int y2, double& A,
+    double& B, double& C) {
   double x1_d = x1;
   double y1_d = y1;
   double x2_d = x2;
@@ -270,8 +276,9 @@ void CharRegion::twoPoints_ABC(const int x1, const int y1, const int x2, const i
 
 // omit the procedure of checking whether x, y  in the given line
 // omit the procedure of checking (A==0||B==0)
-void CharRegion::getVerticalLine(const double A, const double B, const double C, const int intersection_x,
-    const int intersection_y, double& A_vert, double& B_vert, double& C_vert) {
+void CharRegion::getVerticalLine(const double A, const double B, const double C,
+    const int intersection_x, const int intersection_y, double& A_vert, double& B_vert,
+    double& C_vert) {
   // A x + By +C = 0
   if (B == 0) {		// given line: x = xxx
     // res line: y - intersection_y = 0
@@ -311,8 +318,8 @@ void CharRegion::cvtLocal2Global() {
   }
 }
 
-void CharRegion::getIntersectionPoint(const double A1, const double B1, const double C1, const double A2,
-    const double B2, const double C2, int& x, int& y, bool& flag) {
+void CharRegion::getIntersectionPoint(const double A1, const double B1, const double C1,
+    const double A2, const double B2, const double C2, int& x, int& y, bool& flag) {
   double x_d = x;
   double y_d = y;
   getIntersectionPoint(A1, B1, C1, A2, B2, C2, x_d, y_d, flag);
@@ -320,12 +327,14 @@ void CharRegion::getIntersectionPoint(const double A1, const double B1, const do
   y = round(y_d);
 }
 
-void CharRegion::getIntersectionPoint(const double A1, const double B1, const double C1, const double A2,
-    const double B2, const double C2, double& x, double& y, bool& flag) {
+void CharRegion::getIntersectionPoint(const double A1, const double B1, const double C1,
+    const double A2, const double B2, const double C2, double& x, double& y, bool& flag) {
 
   double slope1 = -A1 / B1;
   double slope2 = -A2 / B2;
   if (slope1 == slope2) {
+    x = -numeric_limits<double>::infinity();
+    y = x;
     flag = false;
     return;
   }
@@ -405,7 +414,8 @@ void CharRegion::calc_lines_info() {
 // ----------
 // DESIGN PATTERN: BETTER PASS DIST_FUN() AS ARGUMENTS
 template<typename T>
-void basicHierarchicalAlg(const vector<T>& data, const T diff_thresh, vector<vector<int>>& id_hierachy) {
+void basicHierarchicalAlg(const vector<T>& data, const T diff_thresh,
+    vector<vector<int>>& id_hierachy) {
 // temp printing
   cout << endl << endl << "data:~~ thresh:" << diff_thresh << endl;
   for (int i = 0; i < data.size(); ++i) {
@@ -465,10 +475,11 @@ void basicHierarchicalAlg(const vector<T>& data, const T diff_thresh, vector<vec
 
   }		// remaining_data_dict.size()!=0
 
-  sort(id_hierachy.begin(), id_hierachy.end(), [](const vector<int>& a, const vector<int>& b) -> bool
-  {
-    return a.size() > b.size();
-  });
+  sort(id_hierachy.begin(), id_hierachy.end(),
+      [](const vector<int>& a, const vector<int>& b) -> bool
+      {
+        return a.size() > b.size();
+      });
 
 // temp printing
   for (int i_cluster = 0; i_cluster < id_hierachy.size(); ++i_cluster) {

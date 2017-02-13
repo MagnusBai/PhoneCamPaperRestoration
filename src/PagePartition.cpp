@@ -57,9 +57,23 @@ PageDeutschland::PageDeutschland(double g_A_base_line, double g_B_base_line, dou
   // reorganize regions by district
   reorganizeRegions(charRegionArray);
 
+
   for(int i=0; i<4; ++i) {
     regions[i].bullshitsFilter();
   }
+  for(int i=0; i<p_munchen->id_data_array2.size(); ++i) {
+    int id = p_munchen->id_data_array2[i].first;
+    int region_id = p_munchen->lines_array[id].first;
+    int line_id = p_munchen->lines_array[id].second;
+    int x1 = (p_munchen->p_charRegionArray)->at(region_id).bb_intersection_pts[line_id*4+0];
+    int y1 = (p_munchen->p_charRegionArray)->at(region_id).bb_intersection_pts[line_id*4+1];
+    int x2 = (p_munchen->p_charRegionArray)->at(region_id).bb_intersection_pts[line_id*4+2];
+    int y2 = (p_munchen->p_charRegionArray)->at(region_id).bb_intersection_pts[line_id*4+3];
+
+    line(munchen_im, Point(x1, y1), Point(x2, y2),
+           CharRegion::solarized_palette["magenta"], 2);
+  }
+  imwrite("district_munchen_im2.png", munchen_im);
 
 }
 
