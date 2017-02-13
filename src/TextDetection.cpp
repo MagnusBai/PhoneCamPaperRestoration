@@ -50,12 +50,28 @@
 #include <unordered_map>
 #include <string>
 
-using namespace cv;
+
 
 #include "TextDetection.h"
 
 #include "CharRegion.h"
 
+// #include <mrpt/math/lightweight_geom_data.h>		// mrpt::math::TPoint2D TLine2D
+#include <mrpt/math/ransac_applications.h>
+#include <mrpt/gui/CDisplayWindow3D.h>
+#include <mrpt/gui/CDisplayWindowPlots.h>
+#include <mrpt/random.h>
+#include <mrpt/utils/CTicTac.h>
+#include <mrpt/utils/metaprogramming.h>
+#include <mrpt/poses/CPose3D.h>
+#include <mrpt/opengl/CGridPlaneXY.h>
+#include <mrpt/opengl/CPointCloud.h>
+#include <mrpt/opengl/stock_objects.h>
+#include <mrpt/opengl/CTexturedPlane.h>
+
+#include "PagePartition.h"
+
+using namespace cv;
 using namespace std;
 
 #define PI CV_PI
@@ -65,6 +81,66 @@ namespace DetectText {
 const Scalar BLUE(255, 0, 0);
 const Scalar GREEN(0, 255, 0);
 const Scalar RED(0, 0, 255);
+
+template<typename T>
+void clac1DHistogram(const vector<T>& data, const int count_hist,
+		const pair<T, T>& range, vector<int>& hist,
+		vector<vector<int>>& hist_ids) {
+	hist = vector<int>(count_hist, 0);
+	hist_ids = vector<vector<int>>(count_hist, vector<int>(0));
+	T cell_range = (range.second + static_cast<T>(0.001f) - range.first)
+			/ static_cast<T>(count_hist);
+	for (int i = 0; i < data.size(); ++i) {
+		int id = static_cast<int>(floor(data[i] / cell_range));
+		++hist[id];
+		hist_ids[id].push_back(i);
+	}
+}
+
+template<typename T>
+void conv1DSignal(const vector<T>& signal, const vector<float>& convFilter,
+		vector<T>& res_signal) {
+	res_signal = vector<T>(signal.size());	// preparation for result distribution
+
+	int conv_size = convFilter.size();
+	assert(conv_size % 2 == 1);	// conv filter's receptive field should be odd
+	int pos_mid = conv_size / 2;
+	// take 7 sized conv filter as example
+	float mid_multiplier = convFilter[pos_mid];				// is at filter[3]
+	vector<float> prefix_multipliers(pos_mid);	// filter[2: -1: -1]
+	vector<float> suffix_multipliers(pos_mid);	// filter[4: 7]
+	for (int i = 0; i < pos_mid; ++i) {
+		prefix_multipliers[i] = convFilter[pos_mid - 1 - i];
+		suffix_multipliers[i] = convFilter[pos_mid + 1 + i];
+	}
+
+	int i_pos = 0;
+	for (typename vector<T>::const_iterator it_mid = signal.begin(); it_mid < signal.end();
+			++it_mid) {
+		float conv_res = static_cast<float>(*it_mid) * mid_multiplier;
+		// go through prefix
+		for (int i = 0; i < pos_mid; ++i) {
+			typename vector<T>::const_iterator it = it_mid;
+			if (it == signal.begin()) {
+				it = signal.end();
+			}
+			it--;
+			conv_res += static_cast<float>(*it) * prefix_multipliers[i];
+		}
+		// go through suffix
+		for (int i = 0; i < pos_mid; ++i) {
+			typename vector<T>::const_iterator it = it_mid;
+			it++;
+			if (it == signal.end()) {
+				it = signal.begin();
+			}
+			conv_res += static_cast<float>(*it) * suffix_multipliers[i];
+		}
+
+		res_signal[i_pos] = static_cast<T>(round(conv_res));
+		++i_pos;
+	}
+}
 
 std::vector<SWTPointPair2i> findBoundingBoxes(
 		std::vector<std::vector<SWTPoint2d> > & components,
@@ -611,12 +687,11 @@ Mat swtFilterEdges(const Mat& input) {
 			int y = charRegionArray[i].region_pixs[j * 2 + 1];
 			// im.at < uchar > (y, x) = 50;
 			uchar bgr[3];
-			if(charRegionArray[i].const_nlines>0) {
+			if (charRegionArray[i].const_nlines > 0) {
 				bgr[0] = CharRegion::solarized_palette["yellow"][0];
 				bgr[1] = CharRegion::solarized_palette["yellow"][1];
 				bgr[2] = CharRegion::solarized_palette["yellow"][2];
-			}
-			else {
+			} else {
 				bgr[0] = CharRegion::solarized_palette["green"][0];
 				bgr[1] = CharRegion::solarized_palette["green"][1];
 				bgr[2] = CharRegion::solarized_palette["green"][2];
@@ -640,16 +715,17 @@ Mat swtFilterEdges(const Mat& input) {
 		// cout << charRegionArray[i].const_nlines << " : ";
 		// cout << charRegionArray[i].line_paramsPts_global.size() << endl ;
 		for (int j = 0; j < charRegionArray[i].const_nlines; ++j) {
-			if(j>=3) {
+			if (j >= 3) {
 				// break;
 			}
 			cv::line(lines_im,
-					cv::Point(charRegionArray[i].line_paramsPts_global[j * 4 + 0],
+					cv::Point(
+							charRegionArray[i].line_paramsPts_global[j * 4 + 0],
 							charRegionArray[i].line_paramsPts_global[j * 4 + 1]),
-					cv::Point(charRegionArray[i].line_paramsPts_global[j * 4 + 2],
+					cv::Point(
+							charRegionArray[i].line_paramsPts_global[j * 4 + 2],
 							charRegionArray[i].line_paramsPts_global[j * 4 + 3]),
-					CharRegion::solarized_palette["base03"],
-					1);
+					CharRegion::solarized_palette["yellow"], 1);
 		}
 
 	}
@@ -657,37 +733,40 @@ Mat swtFilterEdges(const Mat& input) {
 	// TEMP: plot lines
 
 	vector<pair<float, float>> angles_scores_set;
-	for(int i = 0; i < count_char_regions; ++i) {
-		vector<pair<float, float>>& newbies = charRegionArray[i].region_angle_scores;
-		angles_scores_set.insert(angles_scores_set.end(),
-									newbies.begin(), newbies.end());
+	for (int i = 0; i < count_char_regions; ++i) {
+		vector<pair<float, float>>& newbies =
+				charRegionArray[i].region_angle_scores;
+		angles_scores_set.insert(angles_scores_set.end(), newbies.begin(),
+				newbies.end());
 	}
 	cout << endl << endl << endl;
-	for(int i=0; i<angles_scores_set.size(); ++i) {
-		cout << "(" << angles_scores_set[i].first << ", " << angles_scores_set[i].second;
+	for (int i = 0; i < angles_scores_set.size(); ++i) {
+		cout << "(" << angles_scores_set[i].first << ", "
+				<< angles_scores_set[i].second;
 		cout << ")\t";
 	}
 	cout << endl << endl << endl;
 
-
 	// TEMP: plot region lines
-	for(int i = 0; i < count_char_regions; ++i) {
+	for (int i = 0; i < count_char_regions; ++i) {
 		CharRegion& region = charRegionArray[i];
-		if(region.const_nlines>0) {
+		if (region.const_nlines > 0) {
 			Point pt01 = Point(region.x_min, region.y_min);
 			Point pt02 = Point(region.x_max, region.y_max);
 
-			rectangle(lines_im, Rect(pt01, pt02), CharRegion::solarized_palette["cyan"], 2);
-			for(int j=0; j<region.line_clusters_ids.size(); ++j) {
+			rectangle(lines_im, Rect(pt01, pt02),
+					CharRegion::solarized_palette["cyan"], 2);
+			for (int j = 0; j < region.line_clusters_ids.size(); ++j) {
 				int line_id = region.line_clusters_ids[j][0];
 				int xi1, yi1, xi2, yi2;
-				xi1 = region.bb_intersection_pts[line_id*4+0];
-				yi1 = region.bb_intersection_pts[line_id*4+1];
-				xi2 = region.bb_intersection_pts[line_id*4+2];
-				yi2 = region.bb_intersection_pts[line_id*4+3];
+				xi1 = region.bb_intersection_pts[line_id * 4 + 0];
+				yi1 = region.bb_intersection_pts[line_id * 4 + 1];
+				xi2 = region.bb_intersection_pts[line_id * 4 + 2];
+				yi2 = region.bb_intersection_pts[line_id * 4 + 3];
 
-				if(xi1!=-1) {
-					line(lines_im, Point(xi1, yi1), Point(xi2, yi2), CharRegion::solarized_palette["cyan"], 1);
+				if (xi1 != -1) {
+					line(lines_im, Point(xi1, yi1), Point(xi2, yi2),
+							CharRegion::solarized_palette["cyan"], 1);
 				}
 			}
 		}
@@ -695,64 +774,203 @@ Mat swtFilterEdges(const Mat& input) {
 	imwrite("region_lines.png", lines_im);
 	// TEMP: plot region lines
 
-	// GET GLOBAL AVERAGE SLOPE
-	int count_rslopes = 0;		// rslope is short for region-slope
-	for(int i = 0; i < count_char_regions; ++i) {
+//	// GET GLOBAL AVERAGE SLOPE
+//	// get to wide ranged lines ---- abort this method
+//	int count_rslopes = 0;		// rslope is short for region-slope
+//	for(int i = 0; i < count_char_regions; ++i) {
+//		CharRegion& region = charRegionArray[i];
+//		count_rslopes += region.line_clusters_ids.size();
+//	}
+//	vector<int> region_ids = vector<int>(count_rslopes, 0);
+//	vector<float> rslope_angles = vector<float>(count_rslopes, 0.f);
+//	vector<float> rslope_scores = vector<float>(count_rslopes, 0.f);
+//	int i_rslope = 0;
+//	for(int i = 0; i < count_char_regions; ++i) {
+//		CharRegion& region = charRegionArray[i];
+//		for(int j=0; j<region.region_angle_scores.size(); ++j) {
+//			region_ids[i_rslope] = i;
+//			rslope_angles[i_rslope] = region.region_angle_scores[j].first;
+//			rslope_scores[i_rslope] = region.region_angle_scores[j].second;
+//			++i_rslope;
+//		}
+//	}
+//
+//	vector<vector<int>> rslope_id_hierachy;
+//	basicHierarchicalAlg<float>(rslope_angles, M_PI/180., rslope_id_hierachy);
+//	vector<int>& first_class_id = rslope_id_hierachy[0];
+
+	vector<float> angles_vector;
+	vector<int> hist;
+	vector<int> hist_smoothed;
+	vector<vector<int>> hist_hierarchy;
+	vector< pair<int, int> > id_regionid_lineid;
+	int count_bins = 36;
+
+	int temp_id = 0;
+	for (int i = 0; i < count_char_regions; ++i) {
 		CharRegion& region = charRegionArray[i];
-		count_rslopes += region.line_clusters_ids.size();
-	}
-	vector<int> region_ids = vector<int>(count_rslopes, 0);
-	vector<float> rslope_angles = vector<float>(count_rslopes, 0.f);
-	vector<float> rslope_scores = vector<float>(count_rslopes, 0.f);
-	int i_rslope = 0;
-	for(int i = 0; i < count_char_regions; ++i) {
-		CharRegion& region = charRegionArray[i];
-		for(int j=0; j<region.region_angle_scores.size(); ++j) {
-			region_ids[i_rslope] = i;
-			rslope_angles[i_rslope] = region.region_angle_scores[j].first;
-			rslope_scores[i_rslope] = region.region_angle_scores[j].second;
-			++i_rslope;
+		for (int j = 0; j < region.line_angles.size(); ++j) {
+			angles_vector.push_back(region.line_angles[j]);
+			id_regionid_lineid.push_back( make_pair(i, j) );
+			temp_id++;
 		}
 	}
 
-	vector<vector<int>> rslope_id_hierachy;
-	basicHierarchicalAlg<float>(rslope_angles, M_PI/180., rslope_id_hierachy);
-	vector<int>& first_class_id = rslope_id_hierachy[0];
+	pair<float, float> angle_range = make_pair(0.f, static_cast<float>(M_PI));
+	clac1DHistogram<float>(angles_vector, count_bins, angle_range, hist,
+			hist_hierarchy);
+	conv1DSignal<int>(hist, {0.5f, 1.f, 0.5f}, hist_smoothed);
 
-	// TEMP plotting
-	i_rslope = 0;
-	vector<int>::iterator plot_id_iter = first_class_id.begin();
-	for(int i = 0; i < count_char_regions; ++i) {
-		CharRegion& region = charRegionArray[i];
-		for(int j=0; j<region.region_angle_scores.size(); ++j) {
-			if(plot_id_iter==first_class_id.end()) {
-				break;
-			}
-			if(i_rslope==*plot_id_iter) {
-
-				// cout << "(" << i_rslope << ")" << region.region_angle_scores[j].first << endl;
-				vector<int>& active_lines_id = region.line_clusters_ids[j];
-				for(vector<int>::iterator it_id=active_lines_id.begin(); it_id<active_lines_id.end(); ++it_id) {
-					int l_id = *it_id;
-					int x1, y1, x2, y2;
-					x1 = region.line_paramsPts_global[l_id*4+0];
-					y1 = region.line_paramsPts_global[l_id*4+1];
-					x2 = region.line_paramsPts_global[l_id*4+2];
-					y2 = region.line_paramsPts_global[l_id*4+3];
-					line(lines_im, Point(x1, y1), Point(x2, y2), CharRegion::solarized_palette["magenta"], 1);
-				}
-
-				++plot_id_iter;
-			}
-			++i_rslope;
-		}
+	for (int i = 0; i < count_bins; ++i) {
+		cout << i << "--" << hist[i] << ": " << hist_smoothed[i];
+		cout << endl;
 	}
-	imwrite("coarse_fitting.png", lines_im);
-	// TEMP plotting
+
+	// mean slope of this paper
+	vector<int>::iterator it_max = std::max_element(hist_smoothed.begin(), hist_smoothed.end()) ;
+	int slope_degree = std::distance(hist_smoothed.begin(), it_max);
+	float mean_radians = M_PI/2.f + M_PI*float(slope_degree)/float(count_bins);
+	float mean_slope = tan(mean_radians);
+	if(mean_radians>0.f) {
+		mean_slope = -mean_slope;
+	}
+	// get mean slope line for identification slope = rise/move = delta(y)/delta(x)
+	int page_move = lines_im.cols;
+	int page_rise = mean_slope * page_move;
+	int x1_mean_line = 0;
+	int x2_mean_line = page_move-1;
+	int y1_mean_line = -page_rise/2 + lines_im.rows/2;
+	int y2_mean_line = page_rise/2 + lines_im.rows/2;
+	int x1_aux_line, x2_aux_line, y1_aux_line, y2_aux_line;
+
+	line(lines_im, Point(x1_mean_line, y1_mean_line), Point(x2_mean_line, y2_mean_line),
+							CharRegion::solarized_palette["blue"], 3);
+
+	if(mean_radians<0.f) {
+		// to avoid judgement of the direction of the point to the line we use this
+		x1_aux_line = 0;
+		y1_aux_line = 0;
+		x2_aux_line = page_move;
+		y2_aux_line = -page_rise;
+	}
+	else {
+		x1_aux_line = 0;
+		y1_aux_line = -page_rise;
+		x2_aux_line = page_move;
+		y2_aux_line = 0;
+	}
+	// pre-detemined base line
+//	mrpt::math::TLine2D base_line_pre_det(
+//											mrpt::math::TPoint2D(double(x1_aux_line), double(y1_aux_line)),
+//											mrpt::math::TPoint2D(double(x2_aux_line), double(y2_aux_line))
+//										);
+	double A_aux_line, B_aux_line, C_aux_line;
+	CharRegion::twoPoints_ABC(x1_aux_line, y1_aux_line, x2_aux_line, y2_aux_line,
+					A_aux_line, B_aux_line, C_aux_line);
+
+	//
+	vector<double> distance_array;
+	vector<int>& cand_line_ids = hist_hierarchy[slope_degree];
+	for(auto& id: cand_line_ids) {
+		pair<int, int>& regionid_lineid = id_regionid_lineid[id];
+		int regionid = regionid_lineid.first;
+		int lineid = regionid_lineid.second;
+		CharRegion& cr = charRegionArray[regionid];
+
+		int x_mean = (cr.bb_intersection_pts[lineid*4+0]+cr.bb_intersection_pts[lineid*4+2])/2;
+		int y_mean = (cr.bb_intersection_pts[lineid*4+1]+cr.bb_intersection_pts[lineid*4+3])/2;
+
+		line(lines_im,
+				Point(cr.bb_intersection_pts[lineid*4+0], cr.bb_intersection_pts[lineid*4+1]),
+				Point(cr.bb_intersection_pts[lineid*4+2], cr.bb_intersection_pts[lineid*4+3]),
+									CharRegion::solarized_palette["blue"], 2);
+		// mrpt::math::TPoint2D mean_pt(double(x_mean), double(y_mean));
+		// double dist = base_line_pre_det.distance(mean_pt);	// fuck software development, i am not an expert
+																// so I dont know why the mismatch from MRPT ducument
+																// http://reference.mrpt.org/stable/structmrpt_1_1math_1_1_t_line2_d.html#a1484bc92c6516f9373049c5900d2f3a9
+//		double a = base_line_pre_det.coefs[0];
+//		double b = base_line_pre_det.coefs[1];
+//		double c = base_line_pre_det.coefs[2];
+
+
+		////  AFTER ALL, I USE MY OWN IMPLEMENTATION OF HIGH SCHOOL GEOMETRY
+		double dist = abs( A_aux_line*x_mean+B_aux_line*y_mean+C_aux_line )/
+							sqrt(A_aux_line*A_aux_line+B_aux_line*B_aux_line);
+		// https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
+
+		distance_array.push_back(dist);	// EXTRA-COMPUTATION: vector
+	}
+	double sum_dist = 0.;
+	std::for_each(distance_array.begin(), distance_array.end(),
+			[&] (double n) {
+				sum_dist += n;
+			}
+	);
+	double mean_dist = sum_dist/distance_array.size();
+	cout << "mean_dist : " << mean_dist << endl;
+
+	float abs_slope_angle = abs(mean_slope);
+	int descent = mean_dist / cos(abs_slope_angle);
+	int x1_base_line = x1_aux_line;
+	int x2_base_line = x2_aux_line;
+	int y1_base_line = y1_aux_line+descent;
+	int y2_base_line = y2_aux_line+descent;
+
+	line(lines_im,
+			Point(x1_base_line, y1_base_line),
+			Point(x2_base_line, y2_base_line),
+			CharRegion::solarized_palette["magenta"],
+			5);
+
+	double A_base_line, B_base_line, C_base_line;
+	CharRegion::twoPoints_ABC(x1_base_line, y1_base_line,
+								x2_base_line, y2_base_line,
+								A_base_line, B_base_line, C_base_line);
+
+	// get vertical line of base_line
+	int mid_base_line_x = (x1_base_line + x2_base_line)/2;
+	int mid_base_line_y = (y1_base_line + y2_base_line)/2;
+	double A_base_line_vert, B_base_line_vert, C_base_line_vert;
+	CharRegion::getVerticalLine(A_base_line, B_base_line, C_base_line,
+									mid_base_line_x, mid_base_line_y,
+									A_base_line_vert, B_base_line_vert, C_base_line_vert);
+
+	cout << mid_base_line_x << " , " << mid_base_line_y << endl;
+	int x1_base_line_vert, x2_base_line_vert, y1_base_line_vert, y2_base_line_vert;
+	CharRegion::ABC_2points(A_base_line_vert, B_base_line_vert, C_base_line_vert,
+					x1_base_line_vert, y1_base_line_vert, x2_base_line_vert, y2_base_line_vert);
+
+	cout << A_base_line << "x + " << B_base_line  << "y + " << C_base_line
+				<< " = 0" << endl;
+	cout << x1_base_line << " , ";
+	cout << y1_base_line << " , ";
+	cout << x2_base_line << " , ";
+	cout << y2_base_line << endl;
+	cout << A_base_line_vert << "x + " << B_base_line_vert  << "y + " << C_base_line_vert
+			<< " = 0" << endl;
+	cout << x1_base_line_vert << " , ";
+	cout << y1_base_line_vert << " , ";
+	cout << x2_base_line_vert << " , ";
+	cout << y2_base_line_vert << endl;
+
+	line(lines_im,
+			Point(x1_base_line_vert, y1_base_line_vert),
+			Point(x2_base_line_vert, y2_base_line_vert),
+			CharRegion::solarized_palette["orange"],
+			5);
+
+	imwrite("mean_lines.png", lines_im);
+
+	// PageDeutschland page;
+	PageDeutschland(A_base_line, B_base_line, C_base_line,
+					A_base_line_vert, B_base_line_vert, C_base_line_vert,
+					input.cols, input.rows,
+					charRegionArray);
 
 	//// free pres_mat
 	delete[] pres_mat;
 
+	// cout << "THE FUCK CRUSHED!?" << endl;
 
 	return edge_swt;
 }

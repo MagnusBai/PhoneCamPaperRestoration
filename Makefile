@@ -15,7 +15,7 @@ TOOL_SRC=./tools
 
 MKDIR_P=mkdir -p
 
-all: build_folder $(BUILD_DIR)/RegionGrowth.o $(BUILD_DIR)/TextDetection.o $(BUILD_DIR)/CharRegion.o $(BIN_DIR)/test_main
+all: build_folder $(BIN_DIR)/test_main
 
 build_folder:
 	$(MKDIR_P) $(BUILD_DIR)
@@ -25,12 +25,21 @@ $(BUILD_DIR)/RegionGrowth.o: $(SRC)/RegionGrowth.cpp
 	$(CXX) $^ $(CFLAGS) $(OPENCV_INCL) -c -o $@
 
 $(BUILD_DIR)/TextDetection.o: $(SRC)/TextDetection.cpp
-	$(CXX) $^ $(CFLAGS) $(OPENCV_INCL) -c -o $@
+	$(CXX) $^ $(CFLAGS) $(OPENCV_INCL) $(MRPT_INCL) -c -o $@
 
 $(BUILD_DIR)/CharRegion.o: $(SRC)/CharRegion.cpp
 	$(CXX) $^ $(CFLAGS) $(OPENCV_INCL) $(MRPT_INCL) -c -o $@
 
-$(BIN_DIR)/test_main: $(TOOL_SRC)/test_main.cpp $(BUILD_DIR)/RegionGrowth.o $(BUILD_DIR)/TextDetection.o $(BUILD_DIR)/CharRegion.o
+# $(BIN_DIR)/test_main: $(TOOL_SRC)/test_main.cpp $(BUILD_DIR)/RegionGrowth.o $(BUILD_DIR)/TextDetection.o $(BUILD_DIR)/CharRegion.o
+# 	$(CXX) $^ $(LDFLAGS) $(CFLAGS) $(OPENCV_INCL) $(OPENCV_LIBS) $(MRPT_LIBS) -o $@
+
+$(BUILD_DIR)/test_main.o: $(TOOL_SRC)/test_main.cpp
+	$(CXX) $^ $(CFLAGS) $(OPENCV_INCL) -c -o $@
+
+$(BUILD_DIR)/PagePartition.o : $(SRC)/PagePartition.cpp
+	$(CXX) $^ $(CFLAGS) -c -o $@
+
+$(BIN_DIR)/test_main: $(BUILD_DIR)/test_main.o $(BUILD_DIR)/CharRegion.o $(BUILD_DIR)/RegionGrowth.o $(BUILD_DIR)/TextDetection.o $(BUILD_DIR)/PagePartition.o
 	$(CXX) $^ $(LDFLAGS) $(CFLAGS) $(OPENCV_INCL) $(OPENCV_LIBS) $(MRPT_LIBS) -o $@
 
 clean:
