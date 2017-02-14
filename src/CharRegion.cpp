@@ -12,7 +12,7 @@
 #include <mrpt/opengl/stock_objects.h>
 #include <mrpt/opengl/CTexturedPlane.h>
 
-// #include <mrpt/math/CVectorTemplate.h>
+#include <mrpt/math/CVectorTemplate.h>
 
 #include <algorithm>
 

@@ -8,6 +8,7 @@
 #include <algorithm>
 
 #include "PagePartition.h"
+#include <list>
 
 PageDeutschland::PageDeutschland(double g_A_base_line, double g_B_base_line, double g_C_base_line,
     double g_A_base_line_vert, double g_B_base_line_vert, double g_C_base_line_vert, int g_ori_width, int g_ori_height,
@@ -61,19 +62,21 @@ PageDeutschland::PageDeutschland(double g_A_base_line, double g_B_base_line, dou
   for(int i=0; i<4; ++i) {
     regions[i].bullshitsFilter();
   }
-  for(int i=0; i<p_munchen->id_data_array2.size(); ++i) {
-    int id = p_munchen->id_data_array2[i].first;
-    int region_id = p_munchen->lines_array[id].first;
-    int line_id = p_munchen->lines_array[id].second;
-    int x1 = (p_munchen->p_charRegionArray)->at(region_id).bb_intersection_pts[line_id*4+0];
-    int y1 = (p_munchen->p_charRegionArray)->at(region_id).bb_intersection_pts[line_id*4+1];
-    int x2 = (p_munchen->p_charRegionArray)->at(region_id).bb_intersection_pts[line_id*4+2];
-    int y2 = (p_munchen->p_charRegionArray)->at(region_id).bb_intersection_pts[line_id*4+3];
 
-    line(munchen_im, Point(x1, y1), Point(x2, y2),
+
+  for(int i=0; i<p_wolfsburg->id_data_array2.size(); ++i) {
+    int id = p_wolfsburg->id_data_array2[i].first;
+    int region_id = p_wolfsburg->lines_array[id].first;
+    int line_id = p_wolfsburg->lines_array[id].second;
+    int x1 = (p_wolfsburg->p_charRegionArray)->at(region_id).bb_intersection_pts[line_id*4+0];
+    int y1 = (p_wolfsburg->p_charRegionArray)->at(region_id).bb_intersection_pts[line_id*4+1];
+    int x2 = (p_wolfsburg->p_charRegionArray)->at(region_id).bb_intersection_pts[line_id*4+2];
+    int y2 = (p_wolfsburg->p_charRegionArray)->at(region_id).bb_intersection_pts[line_id*4+3];
+
+    line(wolfsburg_im, Point(x1, y1), Point(x2, y2),
            CharRegion::solarized_palette["magenta"], 2);
   }
-  imwrite("district_munchen_im2.png", munchen_im);
+  imwrite("district_wolfsburg_im2.png", wolfsburg_im);
 
 }
 
@@ -312,5 +315,12 @@ void PageDistrict::bullshitsFilter() {
     else {
       cout << "filtered" << endl;
     }
+  }
+}
+
+void PageDistrict::oddDistanceFilter(int scanRange, vector<pair<int, vector<double>>>& source_signal) {
+  list<pair<int, vector<double>>> s_signal_list(source_signal.begin(), source_signal.end());
+  for(list<pair<int, vector<double>>>::iterator iter=source_signal.begin(); iter<source_signal.end(); ++iter) {
+    for(int )
   }
 }

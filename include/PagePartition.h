@@ -21,6 +21,7 @@ public:
 
   vector<pair<int, vector<double>>> id_data_array;      // [id, {dist_value, angle, x, y}]
   vector<pair<int, vector<double>>> id_data_array2;      // [id, {dist_value, angle, x, y}]
+  vector<pair<int, vector<double>>> id_data_array3;      // [id, {dist_value, angle, x, y}]
   vector<CharRegion>* p_charRegionArray;
   vector<bool> valid_table;
 
@@ -37,6 +38,7 @@ public:
 
   void getSlopeArray(double* north_unit_vector);
   void bullshitsFilter();
+  void oddDistanceFilter(int scanRange, vector<pair<int, vector<double>>>& source_signal);
 };
 
 class PageDeutschland {
