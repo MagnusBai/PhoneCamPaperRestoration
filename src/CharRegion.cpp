@@ -12,7 +12,7 @@
 #include <mrpt/opengl/stock_objects.h>
 #include <mrpt/opengl/CTexturedPlane.h>
 
-#include <mrpt/math/CVectorTemplate.h>
+// #include <mrpt/math/CVectorTemplate.h>
 
 #include <algorithm>
 
@@ -162,6 +162,8 @@ CharRegion::CharRegion(const int arg_count_pixs, const int arg_count_contours,
   line_angles = vector<float>(0);
 
   region_angle_scores = vector<pair<float, float>>(0);
+
+  CharRegion::get_angle_diff<double>(2., 2.);
 }
 
 void CharRegion::push_region_pix(const int arg_x, const int arg_y) {
