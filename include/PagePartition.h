@@ -42,6 +42,8 @@ public:
       vector<pair<int, vector<double>>>& source_signal,
       double odd_angle_thresh=6.,
       int count_odd_thresh=3);
+
+  bool tellIfSheered(double mean_sheered_angle=3.*M_PI/180);
 };
 
 class PageDeutschland {
@@ -70,6 +72,11 @@ public:
 
   char judgeNPE(const double& A, const double& B, const double& C, const double& x,
       const double& y);
+
+  pair<double, double> Stern_des_Sudens;
+  pair<double, double> Stern_des_Nordens;
+  pair<double, double> Stern_des_Ostens;
+  pair<double, double> Stern_des_Westens;
 
   Mat wolfsburg_im;
   Mat jena_im;
