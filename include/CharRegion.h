@@ -103,6 +103,12 @@ public:
   static void getIntersectionPoint(const double A1, const double B1, const double C1,
       const double A2, const double B2, const double C2, double& x, double& y, bool& flag);
 
+  static void getNewABLine(const double A, const double B, const double x, const double y, double& C);
+
+  static void getNewABLine(const double A, const double B, const int x, const int y, double& C);
+
+  static double getEuclideanDist(const double x1, const double y1, const double x2, const double y2);
+
 private:
   // auxiliary var
   int icap_pixs;

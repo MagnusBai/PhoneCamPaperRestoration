@@ -12,7 +12,7 @@
 #include <mrpt/opengl/stock_objects.h>
 #include <mrpt/opengl/CTexturedPlane.h>
 
-#include <mrpt/math/CVectorTemplate.h>
+// #include <mrpt/math/CVectorTemplate.h>
 
 #include <algorithm>
 
@@ -558,6 +558,22 @@ void CharRegion::calcIntersectionLine() {
       bb_intersection_pts[i * 4 + 3] = -1;
     }
   }
+}
+
+void CharRegion::getNewABLine(const double A, const double B, const double x, const double y, double& C) {
+  // Ax + By + C = 0;
+  C = -(A*x + B*y);
+}
+
+void CharRegion::getNewABLine(const double A, const double B, const int x, const int y, double& C) {
+  double x_d = x;
+  double y_d = y;
+
+  getNewABLine(A, B, x_d, y_d, C);
+}
+
+double CharRegion::getEuclideanDist(const double x1, const double y1, const double x2, const double y2) {
+  return sqrt((x1-x2)*(x1-x2)+(y1-y2)*(y1-y2));
 }
 
 //template<typename T>

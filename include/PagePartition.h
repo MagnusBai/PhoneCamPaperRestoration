@@ -65,18 +65,39 @@ public:
   double x1_base_line_vert, y1_base_line_vert, x2_base_line_vert, y2_base_line_vert;
   int x_base_midpoint, y_base_midpoint;
 
-  double A_base_line_left, B_base_line_left, C_base_line_left;
-  double A_base_line_right, B_base_line_right, C_base_line_right;
+  double A_base_line_west, B_base_line_west, C_base_line_west;
+  double A_base_line_east, B_base_line_east, C_base_line_east;
+  double A_base_line_vert_north, B_base_line_vert_north, C_base_line_vert_north;
+  double A_base_line_vert_south, B_base_line_vert_south, C_base_line_vert_south;
+
+  int
 
   double north_unit_vector[2];
+
+  template<typename Dtype>
+  bool isWest(Dtype x, Dtype y);
+
+  template<typename Dtype>
+  bool isEast(Dtype x, Dtype y);
+
+  template<typename Dtype>
+  bool isNorth(Dtype x, Dtype y);
+
+  template<typename Dtype>
+  bool isSouth(Dtype x, Dtype y);
 
   char judgeNPE(const double& A, const double& B, const double& C, const double& x,
       const double& y);
 
-  pair<double, double> Stern_des_Sudens;
-  pair<double, double> Stern_des_Nordens;
-  pair<double, double> Stern_des_Ostens;
-  pair<double, double> Stern_des_Westens;
+  pair<double, double> stern_des_sudens;
+  pair<double, double> stern_des_nordens;
+  pair<double, double> stern_des_ostens;
+  pair<double, double> stern_des_westens;
+
+  pair<double, double> star_of_northwest;
+  pair<double, double> star_of_northeast;
+  pair<double, double> star_of_southwest;
+  pair<double, double> star_of_southeast;
 
   Mat wolfsburg_im;
   Mat jena_im;
@@ -91,6 +112,11 @@ private:
   // return: low 4 bits: 0x0 --> NPE1==N; 0x1 --> NPE1==P
   //			high 4 bits: 0x0 --> NPE2==N; 0x1 --> NPE2==P
   int encode2NPE(char NPE1, char NPE2);
+
+  char north_code;
+  char south_code;
+  char west_code;
+  char east_code;
 
 };
 
