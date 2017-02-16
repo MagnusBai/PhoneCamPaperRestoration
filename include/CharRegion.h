@@ -107,7 +107,8 @@ public:
 
   static void getNewABLine(const double A, const double B, const int x, const int y, double& C);
 
-  static double getEuclideanDist(const double x1, const double y1, const double x2, const double y2);
+  template <typename Dtype>
+  static Dtype getEuclideanDist(const Dtype x1, const Dtype y1, const Dtype x2, const Dtype y2);
 
 private:
   // auxiliary var

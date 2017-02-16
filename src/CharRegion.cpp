@@ -12,7 +12,7 @@
 #include <mrpt/opengl/stock_objects.h>
 #include <mrpt/opengl/CTexturedPlane.h>
 
-// #include <mrpt/math/CVectorTemplate.h>
+#include <mrpt/math/CVectorTemplate.h>
 
 #include <algorithm>
 
@@ -161,6 +161,7 @@ CharRegion::CharRegion(const int arg_count_pixs, const int arg_count_contours, c
   region_angle_scores = vector<pair<float, float>>(0);
 
   CharRegion::get_angle_diff<double>(2., 2.);
+  CharRegion::getEuclideanDist(1.f, 1.f, 2.f, 2.f);
 }
 
 void CharRegion::push_region_pix(const int arg_x, const int arg_y) {
@@ -572,7 +573,8 @@ void CharRegion::getNewABLine(const double A, const double B, const int x, const
   getNewABLine(A, B, x_d, y_d, C);
 }
 
-double CharRegion::getEuclideanDist(const double x1, const double y1, const double x2, const double y2) {
+template <typename Dtype>
+Dtype CharRegion::getEuclideanDist(const Dtype x1, const Dtype y1, const Dtype x2, const Dtype y2) {
   return sqrt((x1-x2)*(x1-x2)+(y1-y2)*(y1-y2));
 }
 

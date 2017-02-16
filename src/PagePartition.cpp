@@ -12,24 +12,21 @@
 #include <iterator>
 
 PageDeutschland::PageDeutschland(double g_A_base_line, double g_B_base_line, double g_C_base_line,
-    double g_A_base_line_vert, double g_B_base_line_vert, double g_C_base_line_vert,
-    int g_ori_width, int g_ori_height, vector<CharRegion>& charRegionArray) :
+    double g_A_base_line_vert, double g_B_base_line_vert, double g_C_base_line_vert, int g_ori_width, int g_ori_height,
+    vector<CharRegion>& charRegionArray) :
     A_base_line(g_A_base_line), B_base_line(g_B_base_line), C_base_line(g_C_base_line), A_base_line_vert(
-        g_A_base_line_vert), B_base_line_vert(g_B_base_line_vert), C_base_line_vert(
-        g_C_base_line_vert), p_wolfsburg(&regions[0]), p_jena(&regions[1]), p_stuttgart(
-        &regions[2]), p_munchen(&regions[3]), ori_width(g_ori_width), ori_height(g_ori_height) {
+        g_A_base_line_vert), B_base_line_vert(g_B_base_line_vert), C_base_line_vert(g_C_base_line_vert), p_wolfsburg(
+        &regions[0]), p_jena(&regions[1]), p_stuttgart(&regions[2]), p_munchen(&regions[3]), ori_width(g_ori_width), ori_height(
+        g_ori_height) {
   // get info of base line
-  CharRegion::ABC_2points(A_base_line, B_base_line, C_base_line, x1_base_line, y1_base_line,
-      x2_base_line, y2_base_line, 0, g_ori_width - 1, 0, g_ori_height - 1);
-  CharRegion::ABC_2points(A_base_line_vert, B_base_line_vert, C_base_line_vert, x1_base_line_vert,
-      y1_base_line_vert, x2_base_line_vert, y2_base_line_vert, 0, g_ori_width - 1, 0,
-      g_ori_height - 1);
+  CharRegion::ABC_2points(A_base_line, B_base_line, C_base_line, x1_base_line, y1_base_line, x2_base_line, y2_base_line,
+      0, g_ori_width - 1, 0, g_ori_height - 1);
+  CharRegion::ABC_2points(A_base_line_vert, B_base_line_vert, C_base_line_vert, x1_base_line_vert, y1_base_line_vert,
+      x2_base_line_vert, y2_base_line_vert, 0, g_ori_width - 1, 0, g_ori_height - 1);
 
   // set 4 orientation point
-  pair<double, double> sudens_nordens1(
-      make_pair(double(x1_base_line_vert), double(y1_base_line_vert)));  // 2 end point of base
-  pair<double, double> sudens_nordens2(
-      make_pair(double(x2_base_line_vert), double(y2_base_line_vert)));  // line verted
+  pair<double, double> sudens_nordens1(make_pair(double(x1_base_line_vert), double(y1_base_line_vert))); // 2 end point of base
+  pair<double, double> sudens_nordens2(make_pair(double(x2_base_line_vert), double(y2_base_line_vert)));  // line verted
   if (sudens_nordens1.second > sudens_nordens2.second) {
     stern_des_sudens = sudens_nordens1;
     stern_des_nordens = sudens_nordens2;
@@ -38,10 +35,8 @@ PageDeutschland::PageDeutschland(double g_A_base_line, double g_B_base_line, dou
     stern_des_nordens = sudens_nordens1;
   }
   // using base_line params to judge south/west
-  south_code = judgeNPE(A_base_line, B_base_line, C_base_line, stern_des_sudens.first,
-      stern_des_sudens.second);
-  north_code = judgeNPE(A_base_line, B_base_line, C_base_line, stern_des_nordens.first,
-      stern_des_nordens.second);
+  south_code = judgeNPE(A_base_line, B_base_line, C_base_line, stern_des_sudens.first, stern_des_sudens.second);
+  north_code = judgeNPE(A_base_line, B_base_line, C_base_line, stern_des_nordens.first, stern_des_nordens.second);
 
   pair<double, double> ostens_westens1(make_pair(double(x1_base_line), double(y1_base_line))); // 2end point of base line
   pair<double, double> ostens_westens2(make_pair(double(x2_base_line), double(y2_base_line)));
@@ -55,18 +50,18 @@ PageDeutschland::PageDeutschland(double g_A_base_line, double g_B_base_line, dou
   // using base_line_vert params to judge east/west
   east_code = judgeNPE(A_base_line_vert, B_base_line_vert, C_base_line_vert, stern_des_ostens.first,
       stern_des_ostens.second);
-  west_code = judgeNPE(A_base_line_vert, B_base_line_vert, C_base_line_vert,
-      stern_des_westens.first, stern_des_westens.second);
+  west_code = judgeNPE(A_base_line_vert, B_base_line_vert, C_base_line_vert, stern_des_westens.first,
+      stern_des_westens.second);
 
   // get base_line_west|east
   A_base_line_west = A_base_line_vert;
   B_base_line_west = B_base_line_vert;
   A_base_line_east = A_base_line_vert;
   B_base_line_east = B_base_line_vert;
-  CharRegion::getNewABLine(A_base_line_west, B_base_line_west, stern_des_westens.first,
-      stern_des_westens.second, C_base_line_west);
-  CharRegion::getNewABLine(A_base_line_east, B_base_line_east, stern_des_ostens.first,
-      stern_des_ostens.second, C_base_line_east);
+  CharRegion::getNewABLine(A_base_line_west, B_base_line_west, stern_des_westens.first, stern_des_westens.second,
+      C_base_line_west);
+  CharRegion::getNewABLine(A_base_line_east, B_base_line_east, stern_des_ostens.first, stern_des_ostens.second,
+      C_base_line_east);
 
   // get base_line_vert_south|north
   A_base_line_vert_north = A_base_line;
@@ -80,39 +75,36 @@ PageDeutschland::PageDeutschland(double g_A_base_line, double g_B_base_line, dou
 
   bool temp_flag;
   // get 4 star of corners
-  CharRegion::getIntersectionPoint(A_base_line_west, B_base_line_west, C_base_line_west,
-      A_base_line_vert_north, B_base_line_vert_north, C_base_line_vert_north,
-      star_of_northwest.first, star_of_northwest.second, temp_flag);
+  CharRegion::getIntersectionPoint(A_base_line_west, B_base_line_west, C_base_line_west, A_base_line_vert_north,
+      B_base_line_vert_north, C_base_line_vert_north, star_of_northwest.first, star_of_northwest.second, temp_flag);
 
-  CharRegion::getIntersectionPoint(A_base_line_west, B_base_line_west, C_base_line_west,
-      A_base_line_vert_south, B_base_line_vert_south, C_base_line_vert_south,
-      star_of_southwest.first, star_of_southwest.second, temp_flag);
+  CharRegion::getIntersectionPoint(A_base_line_west, B_base_line_west, C_base_line_west, A_base_line_vert_south,
+      B_base_line_vert_south, C_base_line_vert_south, star_of_southwest.first, star_of_southwest.second, temp_flag);
 
-  CharRegion::getIntersectionPoint(A_base_line_east, B_base_line_east, C_base_line_east,
-      A_base_line_vert_north, B_base_line_vert_north, C_base_line_vert_north,
-      star_of_northeast.first, star_of_northeast.second, temp_flag);
+  CharRegion::getIntersectionPoint(A_base_line_east, B_base_line_east, C_base_line_east, A_base_line_vert_north,
+      B_base_line_vert_north, C_base_line_vert_north, star_of_northeast.first, star_of_northeast.second, temp_flag);
 
-  CharRegion::getIntersectionPoint(A_base_line_east, B_base_line_east, C_base_line_east,
-      A_base_line_vert_south, B_base_line_vert_south, C_base_line_vert_south,
-      star_of_southeast.first, star_of_southeast.second, temp_flag);
+  CharRegion::getIntersectionPoint(A_base_line_east, B_base_line_east, C_base_line_east, A_base_line_vert_south,
+      B_base_line_vert_south, C_base_line_vert_south, star_of_southeast.first, star_of_southeast.second, temp_flag);
 
-  CharRegion::getIntersectionPoint(A_base_line, B_base_line, C_base_line, A_base_line_vert,
-      B_base_line_vert, C_base_line_vert, x_base_midpoint, y_base_midpoint, temp_flag);
+  CharRegion::getIntersectionPoint(A_base_line, B_base_line, C_base_line, A_base_line_vert, B_base_line_vert,
+      C_base_line_vert, x_base_midpoint, y_base_midpoint, temp_flag);
 
+  // north unit vector
   double north_delta_x = x_base_midpoint - x1_base_line_vert;
   double north_delta_y = y_base_midpoint - y1_base_line_vert;
   double north_base = sqrt(north_delta_x * north_delta_x + north_delta_y * north_delta_y);
   north_unit_vector[0] = north_delta_x / north_base;
   north_unit_vector[1] = north_delta_y / north_base;
 
-  p_wolfsburg->setRegionArray(charRegionArray, A_base_line, B_base_line, C_base_line,
-      A_base_line_vert, B_base_line_vert, C_base_line_vert);
-  p_jena->setRegionArray(charRegionArray, A_base_line, B_base_line, C_base_line, A_base_line_vert,
+  p_wolfsburg->setRegionArray(charRegionArray, A_base_line, B_base_line, C_base_line, A_base_line_vert,
       B_base_line_vert, C_base_line_vert);
-  p_stuttgart->setRegionArray(charRegionArray, A_base_line, B_base_line, C_base_line,
-      A_base_line_vert, B_base_line_vert, C_base_line_vert);
-  p_munchen->setRegionArray(charRegionArray, A_base_line, B_base_line, C_base_line,
-      A_base_line_vert, B_base_line_vert, C_base_line_vert);
+  p_jena->setRegionArray(charRegionArray, A_base_line, B_base_line, C_base_line, A_base_line_vert, B_base_line_vert,
+      C_base_line_vert);
+  p_stuttgart->setRegionArray(charRegionArray, A_base_line, B_base_line, C_base_line, A_base_line_vert,
+      B_base_line_vert, C_base_line_vert);
+  p_munchen->setRegionArray(charRegionArray, A_base_line, B_base_line, C_base_line, A_base_line_vert, B_base_line_vert,
+      C_base_line_vert);
 
   // 4 corner
   // Wolfsburg (north-west)
@@ -122,8 +114,7 @@ PageDeutschland::PageDeutschland(double g_A_base_line, double g_B_base_line, dou
   // Stuttgart (south-west)
   int stuttgart_pts[6] = { 0, ori_height, 0, ori_height + 1, -1, ori_height };
   // München (south-east)
-  int muchen_pts[6] =
-      { ori_width, ori_height, ori_width + 1, ori_height, ori_width, ori_height + 1 };
+  int muchen_pts[6] = { ori_width, ori_height, ori_width + 1, ori_height, ori_width, ori_height + 1 };
   int * corner_pts[4] = { wolfsburg_pts, jena_pts, stuttgart_pts, muchen_pts };
 
   // gen District Code
@@ -206,8 +197,32 @@ PageDeutschland::PageDeutschland(double g_A_base_line, double g_B_base_line, dou
     regions[i].tellIfSheered();
   }
 
-  cout << x1_base_line_vert << " , " << y1_base_line_vert << " , " << x2_base_line_vert << " , "
-      << y2_base_line_vert << endl;
+  cout << x1_base_line_vert << " , " << y1_base_line_vert << " , " << x2_base_line_vert << " , " << y2_base_line_vert
+      << endl;
+}
+
+void PageDeutschland::getWolfsburgRegularPts() {
+  // Point2f north_west(star_of_northwest.first, star_of_northwest.second);   // north_west
+  Point2f north_west(0.f, 0.f);   // north_west
+  Point2f north_east(stern_des_nordens.first, stern_des_nordens.second);  // stern des north
+  Point2f south_east(x_base_midpoint, y_base_midpoint); // mid-point
+  Point2f south_west(stern_des_westens.first, stern_des_westens.second);   // stern des westens
+
+  float width = CharRegion::getEuclideanDist(north_west.x, north_west.y, north_east.x, north_east.y);
+  float height = CharRegion::getEuclideanDist(north_west.x, north_west.y, south_west.x, south_west.y);
+  Point2f north_west_obj(0, 0);
+  Point2f north_east_obj(width, 0);
+  Point2f south_east_obj(width, height);
+  Point2f south_west_obj(0, height);
+
+  vector<Point2f> pts_src( { north_west, north_east, south_east, south_west });
+  vector<Point2f> pts_dst( { north_west_obj, north_east_obj, south_east_obj, south_west_obj });
+
+  // Calc Homography
+  Mat homography = findHomography(pts_dst, pts_src);
+  Mat im_out;
+  warpPerspective(wolfsburg_im, im_out, homography, wolfsburg_im.size());
+  imwrite("wolfsburg_transformed.png", im_out);
 }
 
 template<typename Dtype>
@@ -262,8 +277,7 @@ bool PageDeutschland::isSouth(Dtype x, Dtype y) {
   }
 }
 
-char PageDeutschland::judgeNPE(const double& A, const double& B, const double& C, const double& x,
-    const double& y) {
+char PageDeutschland::judgeNPE(const double& A, const double& B, const double& C, const double& x, const double& y) {
   double res = A * x + B * y + C;
 
   if (res > 0) {
@@ -280,9 +294,8 @@ PageDistrict::PageDistrict() {
   p_charRegionArray = NULL;
 }
 
-void PageDistrict::setRegionArray(vector<CharRegion>& charRegionArray, double g_A_base_line,
-    double g_B_base_line, double g_C_base_line, double g_A_base_line_vert,
-    double g_B_base_line_vert, double g_C_base_line_vert) {
+void PageDistrict::setRegionArray(vector<CharRegion>& charRegionArray, double g_A_base_line, double g_B_base_line,
+    double g_C_base_line, double g_A_base_line_vert, double g_B_base_line_vert, double g_C_base_line_vert) {
   p_charRegionArray = &charRegionArray;
   A_base_line = g_A_base_line;
   B_base_line = g_B_base_line;
@@ -292,8 +305,8 @@ void PageDistrict::setRegionArray(vector<CharRegion>& charRegionArray, double g_
   C_base_line_vert = g_C_base_line_vert;
 
   bool success;
-  CharRegion::getIntersectionPoint(A_base_line, B_base_line, C_base_line, A_base_line_vert,
-      B_base_line_vert, C_base_line_vert, x_center, y_center, success);
+  CharRegion::getIntersectionPoint(A_base_line, B_base_line, C_base_line, A_base_line_vert, B_base_line_vert,
+      C_base_line_vert, x_center, y_center, success);
 }
 
 int PageDeutschland::encode2NPE(char NPE1, char NPE2) {
@@ -343,15 +356,13 @@ void PageDeutschland::reorganizeRegions(vector<CharRegion>& charRegionArray) {
   Mat canvas(Size(ori_width, ori_height), CV_8UC3, CharRegion::solarized_palette["base3"]);
   line(canvas, Point(x1_base_line, y1_base_line), Point(x2_base_line, y2_base_line),
       CharRegion::solarized_palette["magenta"], 3);
-  line(canvas, Point(x1_base_line_vert, y1_base_line_vert),
-      Point(x2_base_line_vert, y2_base_line_vert), CharRegion::solarized_palette["magenta"], 3);
+  line(canvas, Point(x1_base_line_vert, y1_base_line_vert), Point(x2_base_line_vert, y2_base_line_vert),
+      CharRegion::solarized_palette["magenta"], 3);
 
   circle(canvas, Point(x1_base_line, y1_base_line), 10, CharRegion::solarized_palette["violet"], 3);
   circle(canvas, Point(x2_base_line, y2_base_line), 10, CharRegion::solarized_palette["violet"], 3);
-  circle(canvas, Point(x1_base_line_vert, y1_base_line_vert), 10,
-      CharRegion::solarized_palette["violet"], 3);
-  circle(canvas, Point(x2_base_line_vert, y2_base_line_vert), 10,
-      CharRegion::solarized_palette["violet"], 3);
+  circle(canvas, Point(x1_base_line_vert, y1_base_line_vert), 10, CharRegion::solarized_palette["violet"], 3);
+  circle(canvas, Point(x2_base_line_vert, y2_base_line_vert), 10, CharRegion::solarized_palette["violet"], 3);
 
 //	Mat wolfsburg_im = canvas.clone();
 //	Mat jena_im = canvas.clone();
@@ -365,13 +376,10 @@ void PageDeutschland::reorganizeRegions(vector<CharRegion>& charRegionArray) {
   for (int i_region = 0; i_region < charRegionArray.size(); ++i_region) {
     CharRegion& region = charRegionArray[i_region];
     for (int i_line = 0; i_line < region.const_nlines; ++i_line) {
-      int x_midpoint = (region.bb_intersection_pts[i_line * 4 + 0]
-          + region.bb_intersection_pts[i_line * 4 + 2]) / 2;
-      int y_midpoint = (region.bb_intersection_pts[i_line * 4 + 1]
-          + region.bb_intersection_pts[i_line * 4 + 3]) / 2;
+      int x_midpoint = (region.bb_intersection_pts[i_line * 4 + 0] + region.bb_intersection_pts[i_line * 4 + 2]) / 2;
+      int y_midpoint = (region.bb_intersection_pts[i_line * 4 + 1] + region.bb_intersection_pts[i_line * 4 + 3]) / 2;
       char NPE_code1 = judgeNPE(A_base_line, B_base_line, C_base_line, x_midpoint, y_midpoint);
-      char NPE_code2 = judgeNPE(A_base_line_vert, B_base_line_vert, C_base_line_vert, x_midpoint,
-          y_midpoint);
+      char NPE_code2 = judgeNPE(A_base_line_vert, B_base_line_vert, C_base_line_vert, x_midpoint, y_midpoint);
       int code = encode2NPE(NPE_code1, NPE_code2);
 
       // switch(code) {
@@ -380,44 +388,34 @@ void PageDeutschland::reorganizeRegions(vector<CharRegion>& charRegionArray) {
         p_wolfsburg->lines_array.push_back(make_pair(i_region, i_line));
         // break;
         line(wolfsburg_im,
-            Point(region.bb_intersection_pts[i_line * 4 + 0],
-                region.bb_intersection_pts[i_line * 4 + 1]),
-            Point(region.bb_intersection_pts[i_line * 4 + 2],
-                region.bb_intersection_pts[i_line * 4 + 3]), CharRegion::solarized_palette["green"],
-            2);
+            Point(region.bb_intersection_pts[i_line * 4 + 0], region.bb_intersection_pts[i_line * 4 + 1]),
+            Point(region.bb_intersection_pts[i_line * 4 + 2], region.bb_intersection_pts[i_line * 4 + 3]),
+            CharRegion::solarized_palette["green"], 2);
       }
       // case code_jena:
       else if (code == code_jena) {
         p_jena->lines_array.push_back(make_pair(i_region, i_line));
         // break;
-        line(jena_im,
-            Point(region.bb_intersection_pts[i_line * 4 + 0],
-                region.bb_intersection_pts[i_line * 4 + 1]),
-            Point(region.bb_intersection_pts[i_line * 4 + 2],
-                region.bb_intersection_pts[i_line * 4 + 3]), CharRegion::solarized_palette["green"],
-            2);
+        line(jena_im, Point(region.bb_intersection_pts[i_line * 4 + 0], region.bb_intersection_pts[i_line * 4 + 1]),
+            Point(region.bb_intersection_pts[i_line * 4 + 2], region.bb_intersection_pts[i_line * 4 + 3]),
+            CharRegion::solarized_palette["green"], 2);
       }
       // case code_stuttgart:
       else if (code == code_stuttgart) {
         p_stuttgart->lines_array.push_back(make_pair(i_region, i_line));
         // break;
         line(stuttgart_im,
-            Point(region.bb_intersection_pts[i_line * 4 + 0],
-                region.bb_intersection_pts[i_line * 4 + 1]),
-            Point(region.bb_intersection_pts[i_line * 4 + 2],
-                region.bb_intersection_pts[i_line * 4 + 3]), CharRegion::solarized_palette["green"],
-            2);
+            Point(region.bb_intersection_pts[i_line * 4 + 0], region.bb_intersection_pts[i_line * 4 + 1]),
+            Point(region.bb_intersection_pts[i_line * 4 + 2], region.bb_intersection_pts[i_line * 4 + 3]),
+            CharRegion::solarized_palette["green"], 2);
       }
       // case code_munchen:
       else if (code == code_munchen) {
         p_munchen->lines_array.push_back(make_pair(i_region, i_line));
         // break;
-        line(munchen_im,
-            Point(region.bb_intersection_pts[i_line * 4 + 0],
-                region.bb_intersection_pts[i_line * 4 + 1]),
-            Point(region.bb_intersection_pts[i_line * 4 + 2],
-                region.bb_intersection_pts[i_line * 4 + 3]), CharRegion::solarized_palette["green"],
-            2);
+        line(munchen_im, Point(region.bb_intersection_pts[i_line * 4 + 0], region.bb_intersection_pts[i_line * 4 + 1]),
+            Point(region.bb_intersection_pts[i_line * 4 + 2], region.bb_intersection_pts[i_line * 4 + 3]),
+            CharRegion::solarized_palette["green"], 2);
       }
 
     }
@@ -453,8 +451,7 @@ void PageDistrict::getSlopeArray(double* north_unit_vector) {
 
     double x, y;
     bool success;
-    CharRegion::getIntersectionPoint(A, B, C, A_base_line_vert, B_base_line_vert, C_base_line_vert,
-        x, y, success);
+    CharRegion::getIntersectionPoint(A, B, C, A_base_line_vert, B_base_line_vert, C_base_line_vert, x, y, success);
 
     // cout << g_count << "  " << x-x_center << " , " << y-y_center << endl;
     double line_dist_x = x - x_center;
@@ -607,8 +604,7 @@ bool PageDistrict::tellIfSheered(double mean_sheered_angle) {
   double base_angle, base_slope;
   CharRegion::get_slope_angle(A_base_line, B_base_line, C_base_line, base_slope, base_angle);
 
-  cout << "\nBASE: " << base_angle << "  AVERAGE: " << angle_aver << " THRESH: "
-      << mean_sheered_angle << endl;
+  cout << "\nBASE: " << base_angle << "  AVERAGE: " << angle_aver << " THRESH: " << mean_sheered_angle << endl;
 
   return abs(angle_aver - base_angle) >= mean_sheered_angle;
 }

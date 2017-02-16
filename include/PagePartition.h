@@ -53,6 +53,8 @@ public:
       double g_A_base_line_vert, double g_B_base_line_vert, double g_C_base_line_vert,
       int g_ori_width, int g_ori_height, vector<CharRegion>& charRegionArray);
 
+  void getWolfsburgRegularPts();
+
 public:
   PageDistrict regions[4];
   PageDistrict *p_wolfsburg, *p_jena, *p_stuttgart, *p_munchen;
@@ -69,8 +71,6 @@ public:
   double A_base_line_east, B_base_line_east, C_base_line_east;
   double A_base_line_vert_north, B_base_line_vert_north, C_base_line_vert_north;
   double A_base_line_vert_south, B_base_line_vert_south, C_base_line_vert_south;
-
-  int
 
   double north_unit_vector[2];
 
@@ -94,10 +94,10 @@ public:
   pair<double, double> stern_des_ostens;
   pair<double, double> stern_des_westens;
 
-  pair<double, double> star_of_northwest;
-  pair<double, double> star_of_northeast;
-  pair<double, double> star_of_southwest;
-  pair<double, double> star_of_southeast;
+  pair<double, double> star_of_northwest;     // maybe exceed the range of image pixel
+  pair<double, double> star_of_northeast;     // maybe exceed the range of image pixel
+  pair<double, double> star_of_southwest;     // maybe exceed the range of image pixel
+  pair<double, double> star_of_southeast;     // maybe exceed the range of image pixel
 
   Mat wolfsburg_im;
   Mat jena_im;
