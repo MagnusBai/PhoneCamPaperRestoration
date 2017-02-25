@@ -40,7 +40,7 @@ PageDeutschland::PageDeutschland(double g_A_base_line, double g_B_base_line, dou
 
   pair<double, double> ostens_westens1(make_pair(double(x1_base_line), double(y1_base_line))); // 2end point of base line
   pair<double, double> ostens_westens2(make_pair(double(x2_base_line), double(y2_base_line)));
-  if (ostens_westens1.first > ostens_westens2.first) {
+  if (ostens_westens1.first < ostens_westens2.first) {
     stern_des_ostens = ostens_westens2;
     stern_des_westens = ostens_westens1;
   } else {
@@ -201,9 +201,8 @@ PageDeutschland::PageDeutschland(double g_A_base_line, double g_B_base_line, dou
       << endl;
 }
 
-void PageDeutschland::getWolfsburgRegularPts() {
-  // Point2f north_west(star_of_northwest.first, star_of_northwest.second);   // north_west
-  Point2f north_west(0.f, 0.f);   // north_west
+void PageDeutschland::getWolfsburgRegularPts(const Mat& im_in) {
+  Point2f north_west(star_of_northwest.first, star_of_northwest.second); // north_west
   Point2f north_east(stern_des_nordens.first, stern_des_nordens.second);  // stern des north
   Point2f south_east(x_base_midpoint, y_base_midpoint); // mid-point
   Point2f south_west(stern_des_westens.first, stern_des_westens.second);   // stern des westens
@@ -219,10 +218,83 @@ void PageDeutschland::getWolfsburgRegularPts() {
   vector<Point2f> pts_dst( { north_west_obj, north_east_obj, south_east_obj, south_west_obj });
 
   // Calc Homography
-  Mat homography = findHomography(pts_dst, pts_src);
+  Mat homography = findHomography(pts_src, pts_dst);
   Mat im_out;
-  warpPerspective(wolfsburg_im, im_out, homography, wolfsburg_im.size());
-  imwrite("wolfsburg_transformed.png", im_out);
+
+  warpPerspective(im_in, im_out, homography, Size(width, height));
+  imwrite("transformed_wolfsburg.png", im_out);
+}
+
+void PageDeutschland::getJenaRegularPts(const Mat& im_in) {
+  Point2f north_west(stern_des_nordens.first, stern_des_nordens.second); // stern_des_nordens
+  Point2f north_east(star_of_northeast.first, star_of_northeast.second);  // star_of_northeast
+  Point2f south_east(stern_des_ostens.first, stern_des_ostens.second); // mid-point
+  Point2f south_west(x_base_midpoint, y_base_midpoint);   // stern des westens
+
+  float width = CharRegion::getEuclideanDist(north_west.x, north_west.y, north_east.x, north_east.y);
+  float height = CharRegion::getEuclideanDist(north_west.x, north_west.y, south_west.x, south_west.y);
+  Point2f north_west_obj(0, 0);
+  Point2f north_east_obj(width, 0);
+  Point2f south_east_obj(width, height);
+  Point2f south_west_obj(0, height);
+
+  vector<Point2f> pts_src( { north_west, north_east, south_east, south_west });
+  vector<Point2f> pts_dst( { north_west_obj, north_east_obj, south_east_obj, south_west_obj });
+
+  // Calc Homography
+  Mat homography = findHomography(pts_src, pts_dst);
+
+  Mat im_out;
+  warpPerspective(im_in, im_out, homography, Size(width, height));
+  imwrite("transformed_jena.png", im_out);
+}
+
+void PageDeutschland::getStuttgartRegularPts(const Mat& im_in) {
+  Point2f north_west(stern_des_westens.first, stern_des_westens.second); // stern_des_westens
+  Point2f north_east(x_base_midpoint, y_base_midpoint);  // mid-point
+  Point2f south_east(stern_des_sudens.first, stern_des_sudens.second); // stern_des_sudens
+  Point2f south_west(star_of_southwest.first, star_of_southwest.second);   // star_of_southwest
+
+  float width = CharRegion::getEuclideanDist(north_west.x, north_west.y, north_east.x, north_east.y);
+  float height = CharRegion::getEuclideanDist(north_west.x, north_west.y, south_west.x, south_west.y);
+  Point2f north_west_obj(0, 0);
+  Point2f north_east_obj(width, 0);
+  Point2f south_east_obj(width, height);
+  Point2f south_west_obj(0, height);
+
+  vector<Point2f> pts_src( { north_west, north_east, south_east, south_west });
+  vector<Point2f> pts_dst( { north_west_obj, north_east_obj, south_east_obj, south_west_obj });
+
+  // Calc Homography
+  Mat homography = findHomography(pts_src, pts_dst);
+
+  Mat im_out;
+  warpPerspective(im_in, im_out, homography, Size(width, height));
+  imwrite("transformed_stuttgart.png", im_out);
+}
+
+void PageDeutschland::getMunchenRegularPts(const Mat& im_in) {
+  Point2f north_west(x_base_midpoint, y_base_midpoint); // stern_des_westens
+  Point2f north_east(stern_des_ostens.first, stern_des_ostens.second);  // mid-point
+  Point2f south_east(star_of_southeast.first, star_of_southeast.second); // stern_des_sudens
+  Point2f south_west(stern_des_sudens.first, stern_des_sudens.second);   // star_of_southwest
+
+  float width = CharRegion::getEuclideanDist(north_west.x, north_west.y, north_east.x, north_east.y);
+  float height = CharRegion::getEuclideanDist(north_west.x, north_west.y, south_west.x, south_west.y);
+  Point2f north_west_obj(0, 0);
+  Point2f north_east_obj(width, 0);
+  Point2f south_east_obj(width, height);
+  Point2f south_west_obj(0, height);
+
+  vector<Point2f> pts_src( { north_west, north_east, south_east, south_west });
+  vector<Point2f> pts_dst( { north_west_obj, north_east_obj, south_east_obj, south_west_obj });
+
+  // Calc Homography
+  Mat homography = findHomography(pts_src, pts_dst);
+
+  Mat im_out;
+  warpPerspective(im_in, im_out, homography, Size(width, height));
+  imwrite("transformed_munchen.png", im_out);
 }
 
 template<typename Dtype>

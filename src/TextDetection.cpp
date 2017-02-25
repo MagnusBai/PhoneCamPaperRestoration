@@ -907,7 +907,10 @@ Mat swtFilterEdges(const Mat& input) {
   PageDeutschland pd(A_base_line, B_base_line, C_base_line, A_base_line_vert, B_base_line_vert, C_base_line_vert,
       input.cols, input.rows, charRegionArray);
 
-  pd.getWolfsburgRegularPts();
+  pd.getWolfsburgRegularPts(input);
+  pd.getJenaRegularPts(input);
+  pd.getStuttgartRegularPts(input);
+  pd.getMunchenRegularPts(input);
 
   //// free pres_mat
   delete[] pres_mat;

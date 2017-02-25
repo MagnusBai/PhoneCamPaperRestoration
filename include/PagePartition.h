@@ -53,7 +53,11 @@ public:
       double g_A_base_line_vert, double g_B_base_line_vert, double g_C_base_line_vert,
       int g_ori_width, int g_ori_height, vector<CharRegion>& charRegionArray);
 
-  void getWolfsburgRegularPts();
+  void getWolfsburgRegularPts(const Mat& im_in);
+  void getJenaRegularPts(const Mat& im_in);
+  void getStuttgartRegularPts(const Mat& im_in);
+  void getMunchenRegularPts(const Mat& im_in);
+
 
 public:
   PageDistrict regions[4];
