@@ -30,6 +30,8 @@ public:
   int x_center, y_center;
 
 public:
+  void getQualifiedRegionIDs(set<int>& regions_ids);
+
   PageDistrict();
 
   void setRegionArray(vector<CharRegion>& charRegionArray, double g_A_base_line,
@@ -44,6 +46,8 @@ public:
       int count_odd_thresh=3);
 
   bool tellIfSheered(double mean_sheered_angle=3.*M_PI/180);
+
+  void printAngles();
 };
 
 class PageDeutschland {
@@ -107,6 +111,10 @@ public:
   Mat jena_im;
   Mat stuttgart_im;
   Mat munchen_im;
+
+public:
+  static void getLeftSideEdge(const Mat& edge_im, Mat& r_edge_im);
+  static void getRightSideEdge(const Mat& edge_im, Mat& r_edge_im);
 
 private:
   void genDeDistrictCode(int ** corner_pts);

@@ -912,6 +912,8 @@ Mat swtFilterEdges(const Mat& input) {
   pd.getStuttgartRegularPts(input);
   pd.getMunchenRegularPts(input);
 
+  pd.p_munchen->printAngles();
+
   //// free pres_mat
   delete[] pres_mat;
 
