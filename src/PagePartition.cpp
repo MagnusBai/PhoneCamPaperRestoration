@@ -237,7 +237,6 @@ void PageDeutschland::getWolfsburgRegularPts(const Mat& im_in) {
   imwrite("transformed_wolfsburg.png", im_out);
 
   vector<CharRegion>& region_array = (*p_wolfsburg->p_charRegionArray);
-  Mat canvas(1280, 960, CV_8UC1, Scalar((unsigned char) 0));
 //  for(int i_region=0; i_region<region_array.size(); ++i_region) {
 //    CharRegion& cr = region_array[i_region];
 //    for(int i_pix=0; i_pix<cr.region_contours.size()/2; ++i_pix) {
@@ -295,20 +294,27 @@ void PageDeutschland::getWolfsburgRegularPts(const Mat& im_in) {
   transformed_pts_mat = homo_mat * homo_pts_mat;
 
   // get transformed points
+  Mat canvas(height, width, CV_8UC1, Scalar((unsigned char) 0));
   for(int i_pt=0; i_pt<transformed_pts_mat.cols; ++i_pt) {
     float hbase = transformed_pts_mat.at<float>(2, i_pt);
     float x = transformed_pts_mat.at<float>(0, i_pt) / hbase;
     float y = transformed_pts_mat.at<float>(1, i_pt) / hbase;
     int x_d = int(round(x));
     int y_d = int(round(y));
+    if(x_d>=0 && x_d<width && y_d>=0 && y_d<height) {
+      canvas.at<uchar>(y, x, 0) = uchar(255);
+    }
 
-    canvas.at<uchar>(y, x, 0) = uchar(255);
   }
 
   delete [] p_homo_pts_mat;     // FREE DYNAMNIC ALLOCATION
 
+  //    |-> encircled codes process can be seen as reorganize points
   Mat canvas_redge;
+  // Maybe more filter process would be used here
+  // HIGHLY RECOMMENDED FOR ITS WIDE USE
   PageDeutschland::getLeftSideEdge(canvas, canvas_redge);
+  //    <-|
 
   imwrite("edges_wolfsburg.png", canvas);
   imwrite("edges_wolfsburg_right.png", canvas_redge);
@@ -824,6 +830,7 @@ void PageDeutschland::getLeftSideEdge(const Mat& edge_im, Mat& r_edge_im) {
     }
   }
 }
+
 
 // according to the limit theory of advanced mathematics, when theta is small, lim( tan(theta)-theta ) is incline to 0
 //0   angle:  0.0 tan():  0.0
